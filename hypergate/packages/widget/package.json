@@ -1,0 +1,56 @@
+{
+  "name": "@hypergate/widget",
+  "private": true,
+  "version": "0.0.0",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@bigmi/client": "^0.6.5",
+    "@bigmi/react": "^0.6.5",
+    "@lifi/sdk": "^3.15.3",
+    "@lifi/widget": "^3.40.2",
+    "@mysten/dapp-kit": "^0.20.0",
+    "@mysten/sui": "^1.45.2",
+    "@rainbow-me/rainbowkit": "^2.2.10",
+    "@solana/wallet-adapter-base": "^0.9.27",
+    "@solana/wallet-adapter-react": "^0.15.39",
+    "@solana/wallet-adapter-wallets": "^0.19.37",
+    "@solana/web3.js": "^1.98.4",
+    "camelcase-css": "^2.0.1",
+    "fastq": "^1.20.1",
+    "is-extglob": "^2.1.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "run-parallel": "^1.2.0",
+    "source-map-js": "^1.2.1",
+    "viem": "^2.44.4",
+    "wagmi": "^2.19.5",
+    "zustand": "^5.0.10"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "autoprefixer": "^10.4.23",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.46.4",
+    "vite": "^7.2.4"
+  }
+}

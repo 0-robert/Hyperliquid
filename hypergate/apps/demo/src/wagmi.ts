@@ -1,0 +1,86 @@
+import { connectorsForWallets } from '@rainbow-me/rainbowkit';
+import { rainbowWallet, metaMaskWallet, coinbaseWallet } from '@rainbow-me/rainbowkit/wallets';
+import { createConfig, http, createConnector } from 'wagmi';
+import { mock } from 'wagmi/connectors';
+import { arbitrum, mainnet, optimism, base } from 'wagmi/chains';
+import { defineChain } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
+
+export const hyperEvm = defineChain({
+    id: 998,
+    name: 'HyperEVM',
+    nativeCurrency: {
+        decimals: 18,
+        name: 'Hype',
+        symbol: 'HYPE',
+    },
+    rpcUrls: {
+        default: { http: ['https://rpc.hyperliquid.xyz/evm'] },
+    },
+    blockExplorers: {
+        default: { name: 'HyperLiquid Explorer', url: 'https://hyperevm.org/explorer' },
+    },
+});
+
+// 1. Create a Test Account
+const testAccount = privateKeyToAccount('0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80');
+
+// 2. Setup Connectors
+const connectors = connectorsForWallets(
+    [
+        {
+            groupName: 'Development',
+            wallets: [
+                // Robust Test Wallet
+                () => ({
+                    id: 'test-wallet',
+                    name: 'Test Wallet',
+                    iconUrl: 'https://cdn-icons-png.flaticon.com/512/9187/9187604.png',
+                    iconBackground: '#e0e0e0',
+                    installed: true,
+                    downloadUrls: {
+                        android: 'https://example.com',
+                        ios: 'https://example.com',
+                        qrCode: 'https://example.com',
+                    },
+                    extension: {
+                        instructions: {
+                            learnMoreUrl: 'https://example.com',
+                            steps: []
+                        }
+                    },
+                    createConnector: (walletDetails: any) => {
+                        return createConnector((config: any) => ({
+                            ...mock({
+                                accounts: [testAccount.address],
+                                features: { reconnect: true },
+                            })(config),
+                            ...walletDetails,
+                        }));
+                    }
+                })
+            ],
+        },
+        {
+            groupName: 'Recommended',
+            wallets: [rainbowWallet, metaMaskWallet, coinbaseWallet],
+        },
+    ],
+    {
+        appName: 'HyperGate Demo',
+        projectId: 'YOUR_PROJECT_ID',
+    }
+);
+
+export const config = createConfig({
+    connectors,
+    chains: [mainnet, arbitrum, optimism, base, hyperEvm],
+    transports: {
+        [mainnet.id]: http(),
+        [arbitrum.id]: http(),
+        [optimism.id]: http(),
+        [base.id]: http(),
+        [hyperEvm.id]: http(),
+    },
+    ssr: false,
+});
