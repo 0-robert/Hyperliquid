@@ -43,8 +43,11 @@ function BridgePage() {
     <div className="min-h-screen bg-[var(--bg-app)] text-[var(--text-primary)] font-sans relative overflow-hidden selection:bg-purple-500/30">
 
       {/* 1. Background Layer (Complex but subtle) */}
-      <div className="fixed inset-0 w-full h-full opacity-60 pointer-events-none z-0">
-        <Plasma color="#E4E4E7" speed={0.2} scale={2.5} opacity={0.8} />
+      <div className="fixed inset-0 w-full h-full pointer-events-none z-0">
+        <TechnicalGrid />
+        <div className="absolute inset-0 opacity-60">
+          <Plasma color="#E4E4E7" speed={0.2} scale={2.5} opacity={0.8} />
+        </div>
       </div>
 
       {/* 2. Navigation (Floating Dock Style) */}
@@ -181,46 +184,26 @@ function BridgePage() {
           </div>
         </div>
 
-        {/* Bottom Ticker / Stats (Minimalist) */}
-        <div className="fixed bottom-8 left-0 w-full text-center pointer-events-none hidden sm:block delay-500 animate-in fade-in slide-in-from-bottom-4">
-          <div className="inline-flex items-center gap-8 px-8 py-3 bg-white/80 backdrop-blur-md rounded-full border border-[var(--border-subtle)] text-[11px] font-bold text-[var(--text-secondary)] shadow-lg uppercase tracking-widest">
-            <span className="flex items-center gap-2">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-              </span>
-              System Operational
-            </span>
-            <span className="w-px h-3 bg-zinc-200"></span>
-            <span className="flex items-center gap-2">
-              Gas: <span className="text-black">0.001 GWEI</span>
-            </span>
-            <span className="w-px h-3 bg-zinc-200"></span>
-            <span className="flex items-center gap-2">
-              Security: <span className="text-black">MAXIMUM</span>
-            </span>
-          </div>
-        </div>
-
-        {/* Scroll Velocity Strip (Bottom Background) */}
-        <div className="fixed bottom-0 left-0 w-full z-0 opacity-[0.03] pointer-events-none select-none mix-blend-multiply overflow-hidden py-4">
+        {/* Scroll Velocity Strip (Bottom) */}
+        <div className="fixed bottom-0 left-0 w-full z-20 pointer-events-none select-none overflow-hidden bg-gradient-to-t from-white/80 to-transparent backdrop-blur-sm py-3">
           <ScrollVelocity
-            texts={['HYPERLIQUID BRIDGE • SECURE • FAST • LOW COST • ']}
-            velocity={50}
-            className="custom-scroll-text text-black text-[120px] font-black tracking-tighter"
+            texts={['HYPERLIQUID BRIDGE', 'SECURE', 'FAST', 'LOW COST']}
+            velocity={30}
+            className="text-zinc-300 text-sm font-bold tracking-[0.2em]"
           />
         </div>
 
-        {/* Bottom Right Fuzzy Text (Made With Love) */}
-        <div className="fixed bottom-6 right-8 pointer-events-none opacity-50 hover:opacity-100 transition-opacity z-50">
+        {/* Bottom Right Fuzzy Text (Made With Love) - Sticker Style */}
+        <div className="fixed bottom-[8%] right-[5%] pointer-events-auto z-50">
           <FuzzyText
-            baseIntensity={0.10}
-            hoverIntensity={0.4}
+            baseIntensity={0.15}
+            hoverIntensity={0.6}
             enableHover={true}
-            fontSize="10px"
-            color="#000000"
-            fontFamily="monospace"
-            fontWeight={600}
+            fontSize="11px"
+            color="#18181B"
+            fontFamily="'Plus Jakarta Sans', monospace"
+            fontWeight={700}
+            letterSpacing={1}
           >
             MADE WITH L(OVE)(IFI)
           </FuzzyText>
