@@ -65,6 +65,8 @@ export function HyperGate({
     // Local state
     const [isConfirmingRisk, setIsConfirmingRisk] = useState(false);
     const [showDemoModal, setShowDemoModal] = useState(false);
+    const [isVerifyingBalance, setIsVerifyingBalance] = useState(false);
+    const [showRetryError, setShowRetryError] = useState(false);
     const depositIdRef = useRef<string | null>(null);
     const lastAmountRef = useRef<bigint | null>(null);
     const lastTxHashRef = useRef<string | null>(null);
@@ -139,7 +141,6 @@ export function HyperGate({
 
     useEffect(() => {
         const onRouteExecuted = async (route: any) => {
-            console.log('✅ Step 1 Complete: Funds on HyperEVM', route);
 
             // SECURITY: Input Validation
             if (!route || typeof route.toAmount !== 'string') {
@@ -169,6 +170,7 @@ export function HyperGate({
             try {
                 if (!publicClient) throw new Error('No public client available');
 
+                setIsVerifyingBalance(true);
                 await new Promise(r => setTimeout(r, 2000));
 
                 const balance = await publicClient.readContract({
@@ -177,6 +179,7 @@ export function HyperGate({
                     functionName: 'balanceOf',
                     args: [userAddress as `0x${string}`]
                 });
+                setIsVerifyingBalance(false);
 
                 if (balance < amount) {
                     console.error(`❌ Security: Asset Mismatch. Route says ${amount}, Balance is ${balance}`);
@@ -187,6 +190,7 @@ export function HyperGate({
                     amount = balance;
                 }
             } catch (err) {
+                setIsVerifyingBalance(false);
                 console.error('❌ Security: Balance verification failed:', err);
                 setError('BRIDGE_FAILED');
                 callbacks?.onError?.({ type: 'BRIDGE_FAILED', message: 'Balance verification failed' });
@@ -204,9 +208,8 @@ export function HyperGate({
                         route.transactionHash,
                         amount.toString()
                     );
-                    console.log('📝 Backend notified of bridge success');
                 } catch (err) {
-                    console.warn('Failed to notify backend of bridge success:', err);
+                    // Non-critical: backend notification failed but bridge succeeded
                 }
             }
 
@@ -221,9 +224,8 @@ export function HyperGate({
                             txHash,
                             amount.toString()
                         );
-                        console.log('📝 Backend notified of L1 deposit success');
                     } catch (err) {
-                        console.warn('Failed to notify backend of L1 success:', err);
+                        // Non-critical: backend notification failed but deposit succeeded
                     }
                 }
 
@@ -257,10 +259,9 @@ export function HyperGate({
 
                 if (response.success && response.data) {
                     depositIdRef.current = response.data.id;
-                    console.log('📝 Deposit record created:', response.data.id);
                 }
             } catch (err) {
-                console.warn('Failed to create deposit record:', err);
+                // Non-critical: deposit record creation failed
             }
         };
 
@@ -313,14 +314,13 @@ export function HyperGate({
                         lastAmountRef.current = balance;
                     }
                 } catch (err) {
-                    console.error('Failed to fetch balance for retry:', err);
+                    // Could not fetch balance for retry
                 }
             }
         }
 
         if (!lastAmountRef.current || lastAmountRef.current === 0n) {
-            alert('Unable to determine deposit amount. Please start a new bridge.');
-            reset();
+            setShowRetryError(true);
             return;
         }
 
@@ -339,14 +339,13 @@ export function HyperGate({
                         lastAmountRef.current.toString()
                     );
                 } catch (err) {
-                    console.warn('Failed to notify backend of L1 success:', err);
+                    // Non-critical: backend notification failed
                 }
             }
 
             setStateWithCallback('SUCCESS');
             callbacks?.onSuccess?.({ txHash: txHash || '', amount: lastAmountRef.current.toString() });
         } catch (err) {
-            console.error('❌ L1 Deposit Retry Failed:', err);
             setError('DEPOSIT_FAILED');
             callbacks?.onError?.({ type: 'DEPOSIT_FAILED', message: 'L1 deposit retry failed' });
         }
@@ -359,17 +358,12 @@ export function HyperGate({
 
     // Resume function called by Safety Guard Modal
     const proceedWithBridge = async () => {
-        if (state === 'SAFETY_GUARD' && safetyPayload && !safetyPayload.isSafe) {
-            alert("Cannot proceed: Deposit amount is below the minimum safe limit. Funds would be lost.");
-            return;
-        }
-
+        // User has already confirmed via the "Risk It" → "ARE YOU SURE?" flow if amount is unsafe
         if (isDemoMode) {
             setStateWithCallback('BRIDGING');
             await new Promise(r => setTimeout(r, 2000));
 
             const mockRoute = { toAmount: '5000000', toToken: { address: CONTRACTS.USDC_HYPEREVM }, toAmountUSD: '5.00' };
-            console.log('✅ Demo Step 1 Complete');
             setStateWithCallback('DEPOSITING');
             try {
                 await depositToL1(BigInt(mockRoute.toAmount));
@@ -413,6 +407,36 @@ export function HyperGate({
                         onRetryDeposit={handleRetryDeposit}
                         onCancel={handleCancelError}
                     />
+                )}
+
+                {/* Balance Verification Loading Overlay */}
+                {isVerifyingBalance && (
+                    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/95 p-6">
+                        <svg className="w-12 h-12 animate-spin mb-4" style={{ color: primaryColor }} fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <div className="text-lg font-medium mb-2">Verifying Balance</div>
+                        <div className="text-sm text-gray-400">Confirming funds arrived on HyperEVM...</div>
+                    </div>
+                )}
+
+                {/* Retry Error Modal */}
+                {showRetryError && (
+                    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/95 p-6">
+                        <div className="text-4xl mb-4">❌</div>
+                        <div className="text-lg font-medium mb-2">Unable to Retry</div>
+                        <div className="text-sm text-gray-400 text-center mb-6 max-w-[280px]">
+                            Could not determine deposit amount. Please start a new bridge transaction.
+                        </div>
+                        <button
+                            onClick={() => { setShowRetryError(false); reset(); }}
+                            className="px-6 py-3 rounded-xl font-medium transition-all active:scale-[0.98]"
+                            style={{ backgroundColor: primaryColor }}
+                        >
+                            Start Over
+                        </button>
+                    </div>
                 )}
 
                 {state === 'SAFETY_GUARD' && safetyPayload && (

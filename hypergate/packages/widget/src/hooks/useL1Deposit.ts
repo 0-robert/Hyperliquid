@@ -22,7 +22,6 @@ export function useL1Deposit() {
         try {
             // DEMO MODE BYPASS
             if (address === TEST_ADDRESS) {
-                console.log('🔹 Demo Mode: Simulating L1 Deposit...');
                 setIsSimulating(true);
                 await new Promise(resolve => setTimeout(resolve, 3000)); // Simulate transaction time
                 setIsSimulating(false);
@@ -50,7 +49,6 @@ export function useL1Deposit() {
             return txHash;
 
         } catch (error: any) {
-            console.error('L1 Deposit Failed:', error);
             setIsSimulating(false);
 
             // Check for gas errors
