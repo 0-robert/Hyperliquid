@@ -1,19 +1,62 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { LiFiWidget, useWidgetEvents, WidgetEvent } from '@lifi/widget';
-import { useBridgeState } from './stores/useBridgeState';
+import { useBridgeState, type BridgeState } from './stores/useBridgeState';
 import { CHAINS, CONTRACTS, LIMITS } from './config/constants';
 import { usePublicClient } from 'wagmi';
 import { parseAbi } from 'viem';
 import { useL1Deposit } from './hooks/useL1Deposit';
 import { apiClient } from './services/api';
 import { ErrorRecovery } from './components/ErrorRecovery';
+import { ProgressSteps } from './components/ProgressSteps';
+import { DemoModal } from './components/DemoModal';
 import './index.css';
 
-interface HyperGateProps {
-    userAddress: string;
+// =============================================================================
+// Types & Interfaces (Exported for consumers)
+// =============================================================================
+
+export interface HyperGateTheme {
+    /** Primary accent color (default: #A855F7) */
+    primaryColor?: string;
+    /** Container border radius (default: 24px) */
+    borderRadius?: string;
+    /** Container max width (default: 400px) */
+    containerMaxWidth?: string;
 }
 
-export function HyperGate({ userAddress }: HyperGateProps) {
+export interface HyperGateCallbacks {
+    /** Called when bridge+deposit completes successfully */
+    onSuccess?: (data: { txHash: string; amount: string }) => void;
+    /** Called when an error occurs */
+    onError?: (error: { type: string; message: string }) => void;
+    /** Called on every state change */
+    onStatusChange?: (status: BridgeState) => void;
+}
+
+export interface HyperGateProps {
+    /** User's connected wallet address (required) */
+    userAddress: string;
+    /** Optional theme customization */
+    theme?: HyperGateTheme;
+    /** Optional callback handlers */
+    callbacks?: HyperGateCallbacks;
+    /** Show progress indicator (default: true) */
+    showProgress?: boolean;
+    /** Custom class name for container */
+    className?: string;
+}
+
+// =============================================================================
+// Component
+// =============================================================================
+
+export function HyperGate({
+    userAddress,
+    theme,
+    callbacks,
+    showProgress = true,
+    className = '',
+}: HyperGateProps) {
     const { state, setState, setError, setSafetyPayload, safetyPayload, error, reset } = useBridgeState();
     const widgetEvents = useWidgetEvents();
     const { depositToL1, isLoading: isDepositingL1 } = useL1Deposit();
@@ -21,26 +64,44 @@ export function HyperGate({ userAddress }: HyperGateProps) {
 
     // Local state
     const [isConfirmingRisk, setIsConfirmingRisk] = useState(false);
+    const [showDemoModal, setShowDemoModal] = useState(false);
     const depositIdRef = useRef<string | null>(null);
     const lastAmountRef = useRef<bigint | null>(null);
+    const lastTxHashRef = useRef<string | null>(null);
 
-    // Configuration for the widget
+    // Theme defaults
+    const primaryColor = theme?.primaryColor || '#A855F7';
+    const borderRadius = theme?.borderRadius || '24px';
+    const containerMaxWidth = theme?.containerMaxWidth || '400px';
+
+    // Notify parent of state changes
+    const notifyStatusChange = useCallback((newState: BridgeState) => {
+        callbacks?.onStatusChange?.(newState);
+    }, [callbacks]);
+
+    // Wrap setState to also notify callbacks
+    const setStateWithCallback = useCallback((newState: BridgeState) => {
+        setState(newState);
+        notifyStatusChange(newState);
+    }, [setState, notifyStatusChange]);
+
+    // Configuration for the LI.FI widget
     const widgetConfig: any = {
         integrator: 'HyperGate',
         toChain: CHAINS.HYPEREVM.id,
         toToken: CONTRACTS.USDC_HYPEREVM,
-        toAddress: userAddress as any, // Cast to avoid complex type mismatch for now
+        toAddress: userAddress as any,
         hiddenUI: ['toAddress', 'toToken', 'appearance'] as any,
         appearance: 'light',
-        enableGas: true, // Gas Refuel
+        enableGas: true,
         theme: {
             container: {
                 borderRadius: '16px',
                 maxWidth: '100%',
-                boxShadow: 'none', // We use our own shadow in container
+                boxShadow: 'none',
             },
             palette: {
-                primary: { main: '#A855F7' },
+                primary: { main: primaryColor },
             },
         },
     };
@@ -73,7 +134,7 @@ export function HyperGate({ userAddress }: HyperGateProps) {
         });
 
         setPendingRoute(route);
-        setState('SAFETY_GUARD');
+        setStateWithCallback('SAFETY_GUARD');
     };
 
     useEffect(() => {
@@ -84,33 +145,30 @@ export function HyperGate({ userAddress }: HyperGateProps) {
             if (!route || typeof route.toAmount !== 'string') {
                 console.error('❌ Security: Invalid route data from LI.FI');
                 setError('BRIDGE_FAILED');
+                callbacks?.onError?.({ type: 'BRIDGE_FAILED', message: 'Invalid route data received' });
                 return;
             }
 
             // SECURITY: Decimal Handling & Overflow Protection
             let amount: bigint;
             try {
-                // LiFi typically returns amounts in atomic units (wei/base units) as string
-                // We verify it's a valid integer string
                 if (!/^\d+$/.test(route.toAmount)) throw new Error('Invalid amount format');
                 amount = BigInt(route.toAmount);
 
-                // Sanity check against maximum deposit limit
                 if (parseFloat(route.toAmountUSD) > LIMITS.MAXIMUM_DEPOSIT) {
                     throw new Error('Amount exceeds maximum deposit limit');
                 }
             } catch (e) {
                 console.error('❌ Security: Amount validation failed', e);
                 setError('BRIDGE_FAILED');
+                callbacks?.onError?.({ type: 'BRIDGE_FAILED', message: 'Amount validation failed' });
                 return;
             }
 
             // SECURITY: Balance Verification
-            // Verify funds actually arrived on HyperEVM before attempting L1 deposit
             try {
                 if (!publicClient) throw new Error('No public client available');
 
-                // Wait a moment for indexers/RPC to catch up (consistency)
                 await new Promise(r => setTimeout(r, 2000));
 
                 const balance = await publicClient.readContract({
@@ -122,9 +180,6 @@ export function HyperGate({ userAddress }: HyperGateProps) {
 
                 if (balance < amount) {
                     console.error(`❌ Security: Asset Mismatch. Route says ${amount}, Balance is ${balance}`);
-                    // Critical error: Bridge claimed success but funds are missing?
-                    // We will try to deposit whatever is actually there to save the user, 
-                    // BUT only if it's > 0.
                     if (balance === 0n) {
                         throw new Error('Zero balance detected after bridge.');
                     }
@@ -134,10 +189,11 @@ export function HyperGate({ userAddress }: HyperGateProps) {
             } catch (err) {
                 console.error('❌ Security: Balance verification failed:', err);
                 setError('BRIDGE_FAILED');
+                callbacks?.onError?.({ type: 'BRIDGE_FAILED', message: 'Balance verification failed' });
                 return;
             }
 
-            setState('DEPOSITING');
+            setStateWithCallback('DEPOSITING');
             lastAmountRef.current = amount;
 
             // Notify backend that bridge completed
@@ -155,10 +211,9 @@ export function HyperGate({ userAddress }: HyperGateProps) {
             }
 
             try {
-                // Auto-trigger deposit (User needs to sign)
                 const txHash = await depositToL1(amount);
+                lastTxHashRef.current = txHash || null;
 
-                // Notify backend that L1 deposit completed
                 if (depositIdRef.current && txHash) {
                     try {
                         await apiClient.notifyL1Success(
@@ -172,23 +227,25 @@ export function HyperGate({ userAddress }: HyperGateProps) {
                     }
                 }
 
-                setState('SUCCESS');
+                setStateWithCallback('SUCCESS');
+                callbacks?.onSuccess?.({ txHash: txHash || '', amount: amount.toString() });
             } catch (err) {
                 console.error('❌ L1 Deposit Failed:', err);
                 setError('DEPOSIT_FAILED');
+                callbacks?.onError?.({ type: 'DEPOSIT_FAILED', message: 'L1 deposit transaction failed' });
             }
         };
 
-        const onRouteFailed = (error: any) => {
-            console.error('❌ Bridge failed:', error);
-            setState('IDLE');
+        const onRouteFailed = (err: any) => {
+            console.error('❌ Bridge failed:', err);
+            setStateWithCallback('IDLE');
             setError('BRIDGE_FAILED');
+            callbacks?.onError?.({ type: 'BRIDGE_FAILED', message: err?.message || 'Bridge transaction failed' });
         };
 
         const onRouteExecutionStarted = async (route: any) => {
             handleSafetyCheck(route);
 
-            // Create deposit record in backend
             try {
                 const response = await apiClient.createDeposit({
                     userAddress,
@@ -204,7 +261,6 @@ export function HyperGate({ userAddress }: HyperGateProps) {
                 }
             } catch (err) {
                 console.warn('Failed to create deposit record:', err);
-                // Non-blocking - continue with bridge even if backend fails
             }
         };
 
@@ -217,22 +273,17 @@ export function HyperGate({ userAddress }: HyperGateProps) {
             widgetEvents.off(WidgetEvent.RouteExecutionFailed, onRouteFailed);
             widgetEvents.off(WidgetEvent.RouteExecutionStarted, onRouteExecutionStarted);
         };
-    }, [widgetEvents, setState, setError, depositToL1, setSafetyPayload, publicClient, userAddress]);
+    }, [widgetEvents, setStateWithCallback, setError, depositToL1, setSafetyPayload, publicClient, userAddress, callbacks]);
 
     // Demo Mode Logic
     const TEST_ADDRESS = '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045';
     const isDemoMode = userAddress === TEST_ADDRESS;
 
-    const navToDemo = async () => {
-        const inputStr = prompt("Enter simulated amount (USD):", "7.00");
-        if (!inputStr) return;
-
-        const inputAmount = parseFloat(inputStr);
-        // Mock calculations (Assuming roughly $2.50 in gas/fees for demo)
+    const handleDemoSubmit = (inputAmount: number) => {
+        setShowDemoModal(false);
         const mockFees = 2.20;
         const mockDestAmount = Math.max(0, inputAmount - mockFees);
 
-        // Simulate a route for the safety guard
         const mockCalculatedRoute = {
             fromAmountUSD: inputAmount.toFixed(2),
             toAmountUSD: mockDestAmount.toFixed(2),
@@ -245,12 +296,11 @@ export function HyperGate({ userAddress }: HyperGateProps) {
     // Error recovery handlers
     const handleRetryBridge = () => {
         reset();
-        // Widget will be shown again in IDLE state
+        notifyStatusChange('IDLE');
     };
 
     const handleRetryDeposit = async () => {
         if (!lastAmountRef.current) {
-            // If no amount saved, try to get balance from chain
             if (publicClient) {
                 try {
                     const balance = await publicClient.readContract({
@@ -275,10 +325,11 @@ export function HyperGate({ userAddress }: HyperGateProps) {
         }
 
         setError(null);
-        setState('DEPOSITING');
+        setStateWithCallback('DEPOSITING');
 
         try {
             const txHash = await depositToL1(lastAmountRef.current);
+            lastTxHashRef.current = txHash || null;
 
             if (depositIdRef.current && txHash) {
                 try {
@@ -292,55 +343,68 @@ export function HyperGate({ userAddress }: HyperGateProps) {
                 }
             }
 
-            setState('SUCCESS');
+            setStateWithCallback('SUCCESS');
+            callbacks?.onSuccess?.({ txHash: txHash || '', amount: lastAmountRef.current.toString() });
         } catch (err) {
             console.error('❌ L1 Deposit Retry Failed:', err);
             setError('DEPOSIT_FAILED');
+            callbacks?.onError?.({ type: 'DEPOSIT_FAILED', message: 'L1 deposit retry failed' });
         }
     };
 
     const handleCancelError = () => {
         reset();
+        notifyStatusChange('IDLE');
     };
 
-    // Resume function called by Modal
+    // Resume function called by Safety Guard Modal
     const proceedWithBridge = async () => {
         if (state === 'SAFETY_GUARD' && safetyPayload && !safetyPayload.isSafe) {
-            // STRICT SAFETY GUARD: Do not allow proceeding if unsafe
             alert("Cannot proceed: Deposit amount is below the minimum safe limit. Funds would be lost.");
             return;
         }
 
         if (isDemoMode) {
-            setState('BRIDGING');
+            setStateWithCallback('BRIDGING');
             await new Promise(r => setTimeout(r, 2000));
 
             const mockRoute = { toAmount: '5000000', toToken: { address: CONTRACTS.USDC_HYPEREVM }, toAmountUSD: '5.00' };
             console.log('✅ Demo Step 1 Complete');
-            setState('DEPOSITING');
+            setStateWithCallback('DEPOSITING');
             try {
-                // In demo we skip verification
                 await depositToL1(BigInt(mockRoute.toAmount));
-                setState('SUCCESS');
+                setStateWithCallback('SUCCESS');
+                callbacks?.onSuccess?.({ txHash: 'demo-tx-hash', amount: mockRoute.toAmount });
             } catch (err) {
                 setError('DEPOSIT_FAILED');
+                callbacks?.onError?.({ type: 'DEPOSIT_FAILED', message: 'Demo deposit failed' });
             }
         } else {
-            // For real mode, we just close the modal. 
-            // The widget continues since we didn't actually pause it (limitations of Widget events).
-            // NOTE: In a real implementation we would pause the widget if possible. 
-            // Here we rely on the user having to confirm the transaction in wallet anyway, 
-            // but the safety guard UI overlay blocks them from seeing the 'Sign' prompt? 
-            // No, the widget handles the bridge. We just show the overlay. 
-            // Actually, if we are in 'SAFETY_GUARD' state, the component renders the overlay.
-            // If we click Proceed, we switch to BRIDGING/IDLE which hides the overlay.
-            setState('BRIDGING');
+            setStateWithCallback('BRIDGING');
         }
     };
 
+    // Container styles with theme
+    const containerStyle = {
+        borderRadius,
+        maxWidth: containerMaxWidth,
+    } as React.CSSProperties;
+
     return (
-        <div className="hypergate-widget-container flex flex-col items-center justify-center min-h-[500px] w-full max-w-[400px] mx-auto bg-neutral-900/90 backdrop-blur-xl border border-white/10 ring-1 ring-inset ring-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] rounded-[24px] p-4 font-sans">
-            <div className="w-full h-full text-white relative">
+        <div
+            className={`hypergate-widget-container flex flex-col items-center justify-center min-h-[500px] w-full mx-auto bg-neutral-900/90 backdrop-blur-xl border border-white/10 ring-1 ring-inset ring-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] p-4 font-sans ${className}`}
+            style={containerStyle}
+        >
+            {/* Progress Steps */}
+            {showProgress && <ProgressSteps />}
+
+            <div className="w-full h-full text-white relative flex-1">
+                {/* Demo Modal */}
+                <DemoModal
+                    isOpen={showDemoModal}
+                    onClose={() => setShowDemoModal(false)}
+                    onSubmit={handleDemoSubmit}
+                />
 
                 {/* Error Recovery Overlay */}
                 {error && (
@@ -391,8 +455,8 @@ export function HyperGate({ userAddress }: HyperGateProps) {
                         <div className="flex flex-col gap-3 w-full">
                             <div className="flex gap-3 w-full">
                                 <button
-                                    onClick={() => { setState('IDLE'); setIsConfirmingRisk(false); }}
-                                    className="flex-1 py-3 bg-white/10 hover:bg-white/20 rounded-xl font-medium transition-colors"
+                                    onClick={() => { setStateWithCallback('IDLE'); setIsConfirmingRisk(false); }}
+                                    className="flex-1 py-3 bg-white/10 hover:bg-white/20 rounded-xl font-medium transition-colors active:scale-[0.98]"
                                 >
                                     Cancel
                                 </button>
@@ -445,25 +509,25 @@ export function HyperGate({ userAddress }: HyperGateProps) {
 
                         {isDemoMode && state === 'IDLE' && (
                             <button
-                                onClick={navToDemo}
-                                className="w-full py-2 bg-yellow-500/20 text-yellow-300 border border-yellow-500/50 rounded-lg text-sm font-semibold hover:bg-yellow-500/30 transition-colors"
+                                onClick={() => setShowDemoModal(true)}
+                                className="w-full py-3 bg-yellow-500/20 text-yellow-300 border border-yellow-500/50 rounded-xl text-sm font-semibold hover:bg-yellow-500/30 transition-colors active:scale-[0.98]"
                             >
                                 ⚡ Simulate Bridge (Demo)
                             </button>
                         )}
                     </div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center space-y-6 py-20 text-center animate-in fade-in duration-500">
+                    <div className="flex flex-col items-center justify-center space-y-6 py-16 text-center animate-in fade-in duration-500">
                         <div className="relative">
-                            <div className="absolute inset-0 bg-hyper-primary/20 blur-xl rounded-full"></div>
-                            <div className="text-4xl relative z-10">{state === 'SUCCESS' ? '🎉' : '🔄'}</div>
+                            <div className="absolute inset-0 blur-xl rounded-full" style={{ backgroundColor: `${primaryColor}33` }}></div>
+                            <div className="text-5xl relative z-10">{state === 'SUCCESS' ? '🎉' : '🔄'}</div>
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                             <div className="text-2xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
                                 {state === 'SUCCESS' ? 'Funds Arrived!' : 'Depositing to L1...'}
                             </div>
-                            <div className="text-sm text-gray-400 max-w-[200px] mx-auto">
+                            <div className="text-sm text-gray-400 max-w-[280px] mx-auto leading-relaxed">
                                 {state === 'SUCCESS'
                                     ? 'Your USDC is now in your Hyperliquid Trading Account. Ready to trade.'
                                     : 'Bridging complete. Now forwarding to your trading account. Please sign the transaction.'}
@@ -471,18 +535,31 @@ export function HyperGate({ userAddress }: HyperGateProps) {
                         </div>
 
                         {state === 'DEPOSITING' && isDepositingL1 && (
-                            <div className="text-xs text-hyper-primary animate-pulse">
+                            <div className="flex items-center gap-2 text-sm animate-pulse" style={{ color: primaryColor }}>
+                                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
                                 Waiting for signature...
                             </div>
                         )}
 
                         {state === 'SUCCESS' && (
-                            <button
-                                onClick={() => window.open('https://app.hyperliquid.xyz/trade', '_blank')}
-                                className="px-6 py-3 bg-hyper-primary hover:bg-purple-600 rounded-xl font-medium transition-all active:scale-95 shadow-lg shadow-purple-900/20"
-                            >
-                                Open Terminal
-                            </button>
+                            <div className="flex flex-col gap-3 w-full max-w-[200px]">
+                                <button
+                                    onClick={() => window.open('https://app.hyperliquid.xyz/trade', '_blank')}
+                                    className="w-full px-6 py-3 rounded-xl font-medium transition-all active:scale-[0.98] shadow-lg"
+                                    style={{ backgroundColor: primaryColor }}
+                                >
+                                    Open Terminal
+                                </button>
+                                <button
+                                    onClick={() => { reset(); notifyStatusChange('IDLE'); }}
+                                    className="w-full px-6 py-2 text-gray-400 hover:text-white text-sm transition-colors"
+                                >
+                                    Bridge More
+                                </button>
+                            </div>
                         )}
                     </div>
                 )}

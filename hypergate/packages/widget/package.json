@@ -1,7 +1,14 @@
 {
   "name": "@hypergate/widget",
-  "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "One-click bridge + deposit widget for Hyperliquid",
+  "keywords": ["hyperliquid", "bridge", "defi", "crypto", "widget", "lifi", "cross-chain"],
+  "license": "MIT",
+  "author": "HyperGate",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hypergate/hypergate"
+  },
   "main": "src/index.ts",
   "exports": {
     ".": "./src/index.ts"
@@ -14,6 +21,18 @@
     "preview": "vite preview",
     "test": "vitest",
     "test:coverage": "vitest --coverage"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0",
+    "viem": ">=2.0.0",
+    "wagmi": ">=2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": { "optional": false },
+    "react-dom": { "optional": false },
+    "viem": { "optional": false },
+    "wagmi": { "optional": false }
   },
   "dependencies": {
     "@bigmi/client": "^0.6.5",

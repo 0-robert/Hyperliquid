@@ -1,3 +1,15 @@
+// Main Component
 export { HyperGate } from './HyperGate';
-export * from './stores/useBridgeState'; // Exporting store might be useful for the app to know state
+
+// Types for consumers
+export type {
+    HyperGateProps,
+    HyperGateTheme,
+    HyperGateCallbacks,
+} from './HyperGate';
+
+// State management (for advanced usage)
+export * from './stores/useBridgeState';
+
+// API types
 export type { Deposit, ApiResponse } from './services/api';
