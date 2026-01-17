@@ -1,5 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import blockchainService from '../services/blockchain.js';
+import { isRedisAvailable } from '../lib/redis.js';
+import { isDatabaseAvailable } from '../lib/prisma.js';
 import type { HealthStatus, ApiResponse } from '../types/index.js';
 
 const router = Router();
@@ -12,14 +14,17 @@ const startTime = Date.now();
 router.get('/', async (_req: Request, res: Response) => {
     const blockchainHealthy = await blockchainService.healthCheck();
 
+    const dbAvailable = await isDatabaseAvailable();
+    const redisAvailable = isRedisAvailable();
+
     const health: HealthStatus = {
         status: blockchainHealthy ? 'healthy' : 'degraded',
         version: process.env.npm_package_version || '1.0.0',
         uptime: Math.floor((Date.now() - startTime) / 1000),
         timestamp: new Date().toISOString(),
         services: {
-            database: 'unknown', // TODO: Add database health check
-            redis: 'unknown',    // TODO: Add Redis health check
+            database: dbAvailable ? 'connected' : 'disconnected',
+            redis: redisAvailable ? 'connected' : 'disconnected',
             blockchain: blockchainHealthy ? 'connected' : 'disconnected',
         },
     };

@@ -2,6 +2,7 @@ import { Router, type Request, type Response, type NextFunction } from 'express'
 import { depositService } from '../services/index.js';
 import blockchainService from '../services/blockchain.js';
 import { ApiError } from '../middleware/errorHandler.js';
+import { depositRateLimit, walletRateLimit, strictRateLimit } from '../middleware/rateLimit.js';
 import {
     CreateDepositRequestSchema,
     UpdateDepositStatusSchema,
@@ -9,14 +10,21 @@ import {
 } from '../types/index.js';
 import type { ApiResponse, PaginatedResponse, Deposit } from '../types/index.js';
 import logger from '../utils/logger.js';
+import config from '../config/index.js';
 
 const router = Router();
+
+// Apply rate limiting only in non-test environments
+const applyRateLimit = config.nodeEnv !== 'test';
 
 /**
  * Create a new deposit record
  * POST /api/deposits
+ * Rate limited: 10 requests per minute per IP, 3 per minute per wallet
  */
-router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/',
+    ...(applyRateLimit ? [depositRateLimit, walletRateLimit] : []),
+    async (req: Request, res: Response, next: NextFunction) => {
     try {
         const data = CreateDepositRequestSchema.parse(req.body);
         const deposit = await depositService.create(data);
@@ -130,8 +138,11 @@ router.patch('/:id/status', async (req: Request<{ id: string }>, res: Response, 
 /**
  * Verify a transaction on-chain
  * POST /api/deposits/verify
+ * Rate limited: 5 requests per minute (strict)
  */
-router.post('/verify', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/verify',
+    ...(applyRateLimit ? [strictRateLimit] : []),
+    async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { txHash, expectedAmount, expectedRecipient } = VerifyTransactionRequestSchema.parse(req.body);
 
@@ -180,8 +191,11 @@ router.get('/stats', async (_req: Request, res: Response, next: NextFunction) =>
 /**
  * Bridge success webhook (called after frontend completes bridge)
  * POST /api/deposits/bridge-success
+ * Rate limited: 10 requests per minute per IP
  */
-router.post('/bridge-success', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/bridge-success',
+    ...(applyRateLimit ? [depositRateLimit] : []),
+    async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { depositId, bridgeTxHash, amount } = req.body;
 
@@ -229,8 +243,11 @@ router.post('/bridge-success', async (req: Request, res: Response, next: NextFun
 /**
  * L1 deposit success webhook (called after L1 deposit completes)
  * POST /api/deposits/l1-success
+ * Rate limited: 10 requests per minute per IP
  */
-router.post('/l1-success', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/l1-success',
+    ...(applyRateLimit ? [depositRateLimit] : []),
+    async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { depositId, depositTxHash, amount } = req.body;
 

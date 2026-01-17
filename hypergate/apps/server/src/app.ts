@@ -6,6 +6,7 @@ import morgan from 'morgan';
 import config from './config/index.js';
 import logger from './utils/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { generalRateLimit } from './middleware/rateLimit.js';
 import healthRoutes from './routes/health.js';
 import depositRoutes from './routes/deposits.js';
 
@@ -38,6 +39,11 @@ if (config.nodeEnv !== 'test') {
 // Body parsing
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
+
+// Rate limiting (applies to all API routes)
+if (config.nodeEnv !== 'test') {
+    app.use('/api', generalRateLimit);
+}
 
 // =============================================================================
 // Routes

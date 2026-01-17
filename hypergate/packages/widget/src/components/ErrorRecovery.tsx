@@ -1,4 +1,5 @@
-import { useBridgeState, ErrorState } from '../stores/useBridgeState';
+import { useBridgeState } from '../stores/useBridgeState';
+import type { ErrorState } from '../stores/useBridgeState';
 
 interface ErrorRecoveryProps {
     onRetryBridge: () => void;

@@ -2,6 +2,7 @@ import config, { validateConfig } from './config/index.js';
 import logger from './utils/logger.js';
 import blockchainService from './services/blockchain.js';
 import depositService from './services/deposits.js';
+import { getRedisClient, disconnectRedis } from './lib/redis.js';
 import app from './app.js';
 
 // Validate configuration on startup
@@ -13,6 +14,18 @@ validateConfig();
 
 async function startServer() {
     try {
+        // Initialize Redis for rate limiting (optional)
+        if (config.redisUrl) {
+            const redis = await getRedisClient();
+            if (redis) {
+                logger.info('Redis connected for rate limiting');
+            } else {
+                logger.info('Redis not available, using in-memory rate limiting');
+            }
+        } else {
+            logger.info('REDIS_URL not configured, using in-memory rate limiting');
+        }
+
         // Start watching for blockchain events
         if (config.nodeEnv !== 'test') {
             const unwatch = await blockchainService.watchBridgeDeposits();
@@ -43,15 +56,17 @@ async function startServer() {
             });
 
             // Cleanup handler
-            process.on('SIGINT', () => {
+            process.on('SIGINT', async () => {
                 logger.info('Shutting down...');
                 unwatch();
+                await disconnectRedis();
                 process.exit(0);
             });
 
-            process.on('SIGTERM', () => {
+            process.on('SIGTERM', async () => {
                 logger.info('Shutting down...');
                 unwatch();
+                await disconnectRedis();
                 process.exit(0);
             });
         }
