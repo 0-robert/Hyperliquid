@@ -32,8 +32,8 @@ function getEnvVar(key: string, fallback: string): string {
 export const CHAINS = {
     HYPEREVM: {
         // HyperEVM Mainnet Chain ID
-        // Reference: https://hyperliquid.gitbook.io/
-        id: 998,
+        // Reference: https://chainlist.org/chain/999
+        id: 999,
         name: 'HyperEVM',
         rpcUrl: getEnvVar('VITE_RPC_URL', 'https://rpc.hyperliquid.xyz/evm'),
     }

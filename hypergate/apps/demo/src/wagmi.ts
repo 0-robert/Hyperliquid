@@ -7,7 +7,7 @@ import { defineChain } from 'viem';
 
 
 export const hyperEvm = defineChain({
-    id: 998,
+    id: 999,
     name: 'HyperEVM',
     nativeCurrency: {
         decimals: 18,
