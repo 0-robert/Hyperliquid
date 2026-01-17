@@ -1,0 +1,96 @@
+/* =============================================================================
+   HYPERGATE DESIGN SYSTEM v3 (Minimalist Light)
+   Inspiration: Xizt DevOps, ShadCN.
+   ============================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+:root {
+    /* 
+   * SPACING (4pt Base - Strict)
+   */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-12: 48px;
+    --space-16: 64px;
+    --space-20: 80px;
+
+    /* 
+   * RADIUS (Soft & Modern)
+   */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 24px;
+    /* Cards */
+    --radius-full: 9999px;
+
+    /* 
+   * COLORS (High Contrast Light Mode)
+   */
+    --bg-app: #FFFFFF;
+    /* Pure White */
+    --bg-subtle: #F4F4F5;
+    /* Zinc 100 - Very light grey for contrast */
+    --bg-surface: #FFFFFF;
+    /* Card background */
+    --bg-inverse: #09090B;
+    /* Zinc 950 - Black buttons */
+
+    --border-subtle: #E4E4E7;
+    /* Zinc 200 */
+    --border-strong: #D4D4D8;
+    /* Zinc 300 */
+
+    /* Brand Accents - Kept minimal */
+    --primary-base: #000000;
+    /* Primary Action is Black */
+    --primary-hover: #27272A;
+    /* Zinc 800 */
+
+    /* Text Colors */
+    --text-primary: #09090B;
+    /* Zinc 950 */
+    --text-secondary: #71717A;
+    /* Zinc 500 */
+    --text-tertiary: #A1A1AA;
+    /* Zinc 400 */
+    --text-inverse: #FFFFFF;
+    /* White text on black buttons */
+
+    --success: #16A34A;
+    /* Green 600 */
+    --error: #DC2626;
+    /* Red 600 */
+    --warning: #D97706;
+    /* Amber 600 */
+
+    /* 
+   * TYPOGRAPHY
+   * Primary: Plus Jakarta Sans (Modern, Geometric)
+   * Secondary: Inter (UI density)
+   */
+    --font-display: 'Plus Jakarta Sans', -apple-system, sans-serif;
+    --font-body: 'Inter', -apple-system, sans-serif;
+
+    --text-xs: 12px;
+    --text-sm: 14px;
+    --text-base: 16px;
+    --text-lg: 18px;
+    --text-xl: 24px;
+    --text-2xl: 32px;
+    --text-3xl: 48px;
+    --text-4xl: 64px;
+
+    /* 
+   * SHADOWS (Soft, Diffused)
+   */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+    --shadow-float: 0 20px 25px -5px rgb(0 0 0 / 0.05), 0 8px 10px -6px rgb(0 0 0 / 0.01);
+}
