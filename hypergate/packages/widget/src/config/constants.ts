@@ -43,19 +43,37 @@ export const CHAINS = {
 // Contract Addresses
 // =============================================================================
 
-// Default addresses - MUST be verified against official Hyperliquid documentation
-// These are placeholders that should be overridden via environment variables in production
-const DEFAULT_USDC_ADDRESS = '0x0000000000000000000000000000000000000000';
-const DEFAULT_BRIDGE_ADDRESS = '0x2df1c51e09aecf9cacb7bc98cb1742757f163df7';
+// Verified addresses from Hyperliquid/Circle documentation
+// Reference: https://docs.chainstack.com/docs/hyperliquid-bridging-usdc
+
+// Mainnet addresses (verified)
+const MAINNET_USDC_ADDRESS = '0xb88339CB7199b77E23DB6E890353E22632Ba630f';
+const MAINNET_BRIDGE_ADDRESS = '0x6b9e773128f453f5c2c60935ee2de2cbc5390a24';
+
+// Testnet addresses (verified)
+const TESTNET_USDC_ADDRESS = '0x2B3370eE501B4a559b57D449569354196457D8Ab';
+const TESTNET_BRIDGE_ADDRESS = '0x0b80659a4076e9e93c7dbe0f10675a16a3e5c206';
+
+// System address for USDC bridging
+const SYSTEM_ADDRESS = '0x2000000000000000000000000000000000000000';
 
 export const CONTRACTS = {
-    // USDC token contract on HyperEVM
-    // TODO: Replace with verified USDC address from Hyperliquid docs
-    USDC_HYPEREVM: getEnvVar('VITE_USDC_ADDRESS', DEFAULT_USDC_ADDRESS) as `0x${string}`,
+    // Native USDC (Circle) on HyperEVM - Standard ERC20 token
+    // Use this for DeFi apps, DEXs, and as the source for bridging
+    USDC_HYPEREVM: getEnvVar('VITE_USDC_ADDRESS', MAINNET_USDC_ADDRESS) as `0x${string}`,
 
-    // Asset Bridge precompile for L1 deposits
-    // Reference: Hyperliquid GitBook - EVM Bridge section
-    ASSET_BRIDGE: getEnvVar('VITE_BRIDGE_ADDRESS', DEFAULT_BRIDGE_ADDRESS) as `0x${string}`,
+    // CoreDepositWallet (Circle's bridge contract)
+    // NOT a standard ERC20 - use deposit() function after approving USDC
+    ASSET_BRIDGE: getEnvVar('VITE_BRIDGE_ADDRESS', MAINNET_BRIDGE_ADDRESS) as `0x${string}`,
+
+    // System address for USDC bridging operations
+    SYSTEM_ADDRESS: SYSTEM_ADDRESS as `0x${string}`,
+
+    // Testnet addresses (for development)
+    TESTNET: {
+        USDC: TESTNET_USDC_ADDRESS as `0x${string}`,
+        BRIDGE: TESTNET_BRIDGE_ADDRESS as `0x${string}`,
+    },
 } as const;
 
 // =============================================================================
@@ -105,12 +123,22 @@ export function validateConfiguration(): { valid: boolean; errors: string[] } {
     }
 
     // Check for burn address (0x000...000)
-    if (CONTRACTS.USDC_HYPEREVM === '0x0000000000000000000000000000000000000000') {
+    const BURN_ADDRESS = '0x0000000000000000000000000000000000000000';
+    if (CONTRACTS.USDC_HYPEREVM === BURN_ADDRESS) {
         errors.push('USDC address is set to burn address - funds will be lost! Set VITE_USDC_ADDRESS');
     }
 
-    if (CONTRACTS.ASSET_BRIDGE === '0x0000000000000000000000000000000000000000') {
+    if (CONTRACTS.ASSET_BRIDGE === BURN_ADDRESS) {
         errors.push('Bridge address is set to burn address - funds will be lost! Set VITE_BRIDGE_ADDRESS');
+    }
+
+    // Verify addresses match expected mainnet values (warning only)
+    if (CONTRACTS.USDC_HYPEREVM.toLowerCase() !== MAINNET_USDC_ADDRESS.toLowerCase()) {
+        console.warn(`⚠️ USDC address differs from verified mainnet address. Using: ${CONTRACTS.USDC_HYPEREVM}`);
+    }
+
+    if (CONTRACTS.ASSET_BRIDGE.toLowerCase() !== MAINNET_BRIDGE_ADDRESS.toLowerCase()) {
+        console.warn(`⚠️ Bridge address differs from verified mainnet address. Using: ${CONTRACTS.ASSET_BRIDGE}`);
     }
 
     // Validate RPC URL
