@@ -6,6 +6,7 @@ import { usePublicClient } from 'wagmi';
 import { parseAbi } from 'viem';
 import { useL1Deposit } from './hooks/useL1Deposit';
 import { apiClient } from './services/api';
+import { ErrorRecovery } from './components/ErrorRecovery';
 import './index.css';
 
 interface HyperGateProps {
@@ -13,7 +14,7 @@ interface HyperGateProps {
 }
 
 export function HyperGate({ userAddress }: HyperGateProps) {
-    const { state, setState, setError, setSafetyPayload, safetyPayload } = useBridgeState();
+    const { state, setState, setError, setSafetyPayload, safetyPayload, error, reset } = useBridgeState();
     const widgetEvents = useWidgetEvents();
     const { depositToL1, isLoading: isDepositingL1 } = useL1Deposit();
     const publicClient = usePublicClient();
@@ -21,6 +22,7 @@ export function HyperGate({ userAddress }: HyperGateProps) {
     // Local state
     const [isConfirmingRisk, setIsConfirmingRisk] = useState(false);
     const depositIdRef = useRef<string | null>(null);
+    const lastAmountRef = useRef<bigint | null>(null);
 
     // Configuration for the widget
     const widgetConfig: any = {
@@ -136,6 +138,7 @@ export function HyperGate({ userAddress }: HyperGateProps) {
             }
 
             setState('DEPOSITING');
+            lastAmountRef.current = amount;
 
             // Notify backend that bridge completed
             if (depositIdRef.current && route.transactionHash) {
@@ -239,6 +242,67 @@ export function HyperGate({ userAddress }: HyperGateProps) {
         handleSafetyCheck(mockCalculatedRoute);
     };
 
+    // Error recovery handlers
+    const handleRetryBridge = () => {
+        reset();
+        // Widget will be shown again in IDLE state
+    };
+
+    const handleRetryDeposit = async () => {
+        if (!lastAmountRef.current) {
+            // If no amount saved, try to get balance from chain
+            if (publicClient) {
+                try {
+                    const balance = await publicClient.readContract({
+                        address: CONTRACTS.USDC_HYPEREVM as `0x${string}`,
+                        abi: parseAbi(['function balanceOf(address) view returns (uint256)']),
+                        functionName: 'balanceOf',
+                        args: [userAddress as `0x${string}`]
+                    });
+                    if (balance > 0n) {
+                        lastAmountRef.current = balance;
+                    }
+                } catch (err) {
+                    console.error('Failed to fetch balance for retry:', err);
+                }
+            }
+        }
+
+        if (!lastAmountRef.current || lastAmountRef.current === 0n) {
+            alert('Unable to determine deposit amount. Please start a new bridge.');
+            reset();
+            return;
+        }
+
+        setError(null);
+        setState('DEPOSITING');
+
+        try {
+            const txHash = await depositToL1(lastAmountRef.current);
+
+            if (depositIdRef.current && txHash) {
+                try {
+                    await apiClient.notifyL1Success(
+                        depositIdRef.current,
+                        txHash,
+                        lastAmountRef.current.toString()
+                    );
+                } catch (err) {
+                    console.warn('Failed to notify backend of L1 success:', err);
+                }
+            }
+
+            setState('SUCCESS');
+        } catch (err) {
+            console.error('❌ L1 Deposit Retry Failed:', err);
+            setError('DEPOSIT_FAILED');
+        }
+    };
+
+    const handleCancelError = () => {
+        reset();
+    };
+
     // Resume function called by Modal
     const proceedWithBridge = async () => {
         if (state === 'SAFETY_GUARD' && safetyPayload && !safetyPayload.isSafe) {
@@ -277,6 +341,15 @@ export function HyperGate({ userAddress }: HyperGateProps) {
     return (
         <div className="hypergate-widget-container flex flex-col items-center justify-center min-h-[500px] w-full max-w-[400px] mx-auto bg-neutral-900/90 backdrop-blur-xl border border-white/10 ring-1 ring-inset ring-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.4)] rounded-[24px] p-4 font-sans">
             <div className="w-full h-full text-white relative">
+
+                {/* Error Recovery Overlay */}
+                {error && (
+                    <ErrorRecovery
+                        onRetryBridge={handleRetryBridge}
+                        onRetryDeposit={handleRetryDeposit}
+                        onCancel={handleCancelError}
+                    />
+                )}
 
                 {state === 'SAFETY_GUARD' && safetyPayload && (
                     <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/95 p-6 animate-in fade-in zoom-in-95 duration-200">
