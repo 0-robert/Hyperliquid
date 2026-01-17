@@ -37,16 +37,16 @@ function BridgePage() {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center p-4 font-sans">
-      <header className="w-full max-w-4xl flex justify-between items-center py-6">
+      <header className="w-full max-w-4xl flex flex-col sm:flex-row justify-between items-center gap-4 py-4 sm:py-6">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-purple-600 rounded-lg"></div>
           <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent">HyperGate</span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {isDemoMode && (
             <button
               onClick={exitDemoMode}
-              className="px-3 py-1.5 text-sm bg-purple-600/20 border border-purple-500/50 rounded-lg text-purple-300 hover:bg-purple-600/30 transition-colors"
+              className="px-2 sm:px-3 py-1.5 text-xs sm:text-sm bg-purple-600/20 border border-purple-500/50 rounded-lg text-purple-300 hover:bg-purple-600/30 transition-colors"
             >
               Exit Demo
             </button>
@@ -63,10 +63,10 @@ function BridgePage() {
         </div>
       )}
 
-      <main className="flex-1 flex flex-col items-center justify-center w-full max-w-md gap-8 mt-12">
+      <main className="flex-1 flex flex-col items-center justify-center w-full max-w-md gap-6 sm:gap-8 mt-8 sm:mt-12 px-2">
         <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold tracking-tight">Bridge to Hyperliquid</h1>
-          <p className="text-gray-400">One-click atomic deposits to your trading account.</p>
+          <h1 className="text-2xl sm:text-4xl font-bold tracking-tight">Bridge to Hyperliquid</h1>
+          <p className="text-sm sm:text-base text-gray-400">One-click atomic deposits to your trading account.</p>
         </div>
 
         <div className="w-full">
@@ -103,6 +103,45 @@ function BridgePage() {
           ⚠️ <b>Note:</b> Ensure you are bridging {'>'} $5 USDC to avoid protocol burn.
         </div>
       </main>
+
+      {/* How It Works Section */}
+      <section className="w-full max-w-4xl py-16 px-4">
+        <h2 className="text-2xl font-bold text-center mb-8">How It Works</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="p-6 bg-white/5 border border-white/10 rounded-xl text-center">
+            <div className="w-12 h-12 mx-auto mb-4 bg-purple-600/20 rounded-full flex items-center justify-center text-2xl">
+              🔄
+            </div>
+            <h3 className="font-semibold mb-2">1. Select & Swap</h3>
+            <p className="text-sm text-gray-400">
+              Pick any token from any chain. LI.FI finds the optimal swap + bridge route automatically.
+            </p>
+          </div>
+          <div className="p-6 bg-white/5 border border-white/10 rounded-xl text-center">
+            <div className="w-12 h-12 mx-auto mb-4 bg-purple-600/20 rounded-full flex items-center justify-center text-2xl">
+              🛡️
+            </div>
+            <h3 className="font-semibold mb-2">2. Safety Check</h3>
+            <p className="text-sm text-gray-400">
+              Our Safety Guard warns you before deposits under $5.10 (Hyperliquid burns smaller amounts).
+            </p>
+          </div>
+          <div className="p-6 bg-white/5 border border-white/10 rounded-xl text-center">
+            <div className="w-12 h-12 mx-auto mb-4 bg-purple-600/20 rounded-full flex items-center justify-center text-2xl">
+              ⚡
+            </div>
+            <h3 className="font-semibold mb-2">3. Atomic Deposit</h3>
+            <p className="text-sm text-gray-400">
+              Funds land directly in your Hyperliquid trading account. Start trading immediately.
+            </p>
+          </div>
+        </div>
+        <div className="mt-8 p-4 bg-purple-600/10 border border-purple-500/20 rounded-xl text-center">
+          <p className="text-sm text-purple-200">
+            <b>Powered by LI.FI</b> — We intercept bridge completion to auto-execute the L1 deposit. Not just a redirect.
+          </p>
+        </div>
+      </section>
 
       <footer className="mt-auto py-8 text-gray-600 text-sm">
         Built for LI.FI Hackathon 2025
