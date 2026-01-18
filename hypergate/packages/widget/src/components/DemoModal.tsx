@@ -57,8 +57,8 @@ export function DemoModal({ isOpen, onClose, onSubmit }: DemoModalProps) {
     const presetAmounts = [5, 10, 25, 100];
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="w-full max-w-sm bg-neutral-900 border border-white/10 rounded-2xl p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-sm bg-neutral-900 border border-white/10 rounded-2xl p-4 sm:p-6 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between mb-6">
                     <h3 className="text-lg font-bold text-white">Demo Bridge</h3>
                     <button
@@ -82,7 +82,7 @@ export function DemoModal({ isOpen, onClose, onSubmit }: DemoModalProps) {
                         <button
                             key={preset}
                             onClick={() => setAmount(preset.toString())}
-                            className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all
+                            className={`flex-1 py-2.5 sm:py-2 min-h-[44px] sm:min-h-0 rounded-lg text-sm font-medium transition-all active:scale-[0.98]
                                 ${amount === preset.toString()
                                     ? 'bg-purple-600 text-white'
                                     : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white'
@@ -126,17 +126,17 @@ export function DemoModal({ isOpen, onClose, onSubmit }: DemoModalProps) {
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-3">
+                <div className="flex gap-2 sm:gap-3">
                     <button
                         onClick={onClose}
-                        className="flex-1 py-3 bg-white/10 hover:bg-white/20 rounded-xl font-medium text-white transition-colors"
+                        className="flex-1 py-3 sm:py-3 min-h-[48px] bg-white/10 hover:bg-white/20 rounded-xl font-medium text-white transition-colors active:scale-[0.98]"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleSubmit}
                         disabled={!validation.isValid}
-                        className={`flex-1 py-3 rounded-xl font-medium text-white transition-colors active:scale-[0.98] ${
+                        className={`flex-1 py-3 sm:py-3 min-h-[48px] rounded-xl font-medium text-white transition-colors active:scale-[0.98] ${
                             validation.isValid
                                 ? 'bg-purple-600 hover:bg-purple-500'
                                 : 'bg-purple-600/50 cursor-not-allowed'

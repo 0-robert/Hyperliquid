@@ -2,6 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =============================================================================
+   HyperGate Widget Mobile Styles
+   ============================================================================= */
+
 .hypergate-widget-container {
-  /* Scope styles if needed */
+  /* Safe area insets for notched devices (iPhone X+, etc.) */
+  padding-left: max(env(safe-area-inset-left), 1rem);
+  padding-right: max(env(safe-area-inset-right), 1rem);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Ensure modals respect safe areas */
+.hypergate-widget-container [class*="fixed inset-0"],
+.hypergate-widget-container [class*="absolute inset-0"] {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Improve touch response on mobile */
+@media (hover: none) and (pointer: coarse) {
+  .hypergate-widget-container button {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .hypergate-widget-container button:active {
+    opacity: 0.9;
+  }
+}
+
+/* Small screen label visibility helper */
+@media (max-width: 359px) {
+  .hypergate-widget-container .hidden.xs\:block {
+    display: none !important;
+  }
+}
+
+@media (min-width: 360px) {
+  .hypergate-widget-container .hidden.xs\:block {
+    display: block;
+  }
+}
+
+/* Hide inputs during Bridging status */
+.hypergate-widget-container.bridging-mode form {
+  display: none !important;
+}
+
+/* Fallback: If LiFi changes structure, try to hide the card inputs generally */
+/* Note: Active Transactions are usually in a separate list above the form */
+.hypergate-widget-container.bridging-mode div[class*="MuiCard-root"]:has(input) {
+  display: none !important;
+}
+
+/* Hide the Swap/Exchange button if outside form */
+.hypergate-widget-container.bridging-mode button[type="submit"] {
+  display: none !important;
 }
