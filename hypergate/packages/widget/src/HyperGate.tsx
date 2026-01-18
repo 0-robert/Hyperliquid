@@ -69,7 +69,7 @@ export function HyperGate({
     showProgress = true,
     className = '',
 }: HyperGateProps) {
-    const { state, setState, setError, setSafetyPayload, safetyPayload, error, reset } = useBridgeState();
+    const { state, setState, setError, setSafetyPayload, safetyPayload, error, reset, amountMismatchPayload, setAmountMismatchPayload } = useBridgeState();
     const widgetEvents = useWidgetEvents();
     const { depositToL1, isLoading: isDepositingL1 } = useL1Deposit();
     const publicClient = usePublicClient();
@@ -212,8 +212,25 @@ export function HyperGate({
                     if (balance === 0n) {
                         throw new Error('Zero balance detected after bridge.');
                     }
-                    console.warn('⚠️ Depositing actual balance instead of route amount');
-                    amount = balance;
+
+                    // Calculate mismatch details for user confirmation
+                    const expectedUSD = parseFloat(route.toAmountUSD || '0');
+                    // Estimate actual USD based on ratio (USDC has 6 decimals)
+                    const ratio = Number(balance) / Number(amount);
+                    const actualUSD = expectedUSD * ratio;
+                    const differencePercent = ((expectedUSD - actualUSD) / expectedUSD) * 100;
+
+                    // Store mismatch info and require user confirmation
+                    setAmountMismatchPayload({
+                        expectedAmount: amount,
+                        actualAmount: balance,
+                        expectedUSD,
+                        actualUSD,
+                        differencePercent,
+                    });
+                    lastAmountRef.current = balance; // Store actual amount for when user confirms
+                    setStateWithCallback('AMOUNT_MISMATCH');
+                    return; // Wait for user confirmation
                 }
             } catch (err) {
                 setIsVerifyingBalance(false);
@@ -404,6 +421,50 @@ export function HyperGate({
         }
     };
 
+    // Handler for when user confirms they want to proceed despite amount mismatch
+    const proceedWithMismatchedAmount = async () => {
+        if (!lastAmountRef.current || lastAmountRef.current === 0n) {
+            setError('DEPOSIT_FAILED');
+            callbacks?.onError?.({ type: 'DEPOSIT_FAILED', message: 'No amount available for deposit' });
+            return;
+        }
+
+        const amount = lastAmountRef.current;
+        setAmountMismatchPayload(null);
+        setStateWithCallback('DEPOSITING');
+
+        try {
+            const txHash = await depositToL1(amount);
+            lastTxHashRef.current = txHash || null;
+
+            if (depositIdRef.current && txHash) {
+                try {
+                    await apiClient.notifyL1Success(
+                        depositIdRef.current,
+                        txHash,
+                        amount.toString()
+                    );
+                } catch (err) {
+                    // Non-critical: backend notification failed but deposit succeeded
+                }
+            }
+
+            setStateWithCallback('SUCCESS');
+            callbacks?.onSuccess?.({ txHash: txHash || '', amount: amount.toString() });
+        } catch (err) {
+            console.error('❌ L1 Deposit Failed:', err);
+            setError('DEPOSIT_FAILED');
+            callbacks?.onError?.({ type: 'DEPOSIT_FAILED', message: 'L1 deposit transaction failed' });
+        }
+    };
+
+    // Handler for when user cancels after seeing amount mismatch
+    const cancelMismatch = () => {
+        setAmountMismatchPayload(null);
+        reset();
+        notifyStatusChange('IDLE');
+    };
+
     // Container styles with theme
     const containerStyle = {
         borderRadius,
@@ -463,6 +524,56 @@ export function HyperGate({
                         >
                             Start Over
                         </button>
+                    </div>
+                )}
+
+                {/* Amount Mismatch Confirmation Modal */}
+                {state === 'AMOUNT_MISMATCH' && amountMismatchPayload && (
+                    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white p-6 animate-in fade-in duration-200">
+                        <div className="w-14 h-14 rounded-full flex items-center justify-center mb-4 bg-amber-50 text-amber-600">
+                            <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                        </div>
+                        <h3 className="text-xl font-bold mb-2 font-display text-[var(--text-primary)]">Amount Mismatch</h3>
+                        <p className="text-sm text-[var(--text-secondary)] mb-6 text-center max-w-[280px]">
+                            The bridge delivered less than expected. Do you want to proceed?
+                        </p>
+
+                        <div className="w-full space-y-4 mb-6">
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-[var(--text-secondary)]">Expected Amount</span>
+                                <span className="font-medium font-mono text-[var(--text-primary)]">${amountMismatchPayload.expectedUSD.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-[var(--text-secondary)]">Actual Received</span>
+                                <span className="font-medium font-mono text-amber-600">${amountMismatchPayload.actualUSD.toFixed(2)}</span>
+                            </div>
+                            <div className="h-px bg-[var(--border-subtle)] my-2"></div>
+                            <div className="flex justify-between items-center text-base font-bold">
+                                <span className="text-[var(--text-primary)]">Difference</span>
+                                <span className="font-mono text-red-500">-{amountMismatchPayload.differencePercent.toFixed(1)}%</span>
+                            </div>
+                        </div>
+
+                        <div className="p-3 bg-amber-50 border border-amber-100 rounded-[10px] text-amber-700 text-xs text-center mb-6 font-medium">
+                            This may be due to slippage or bridge fees. Your funds are safe on HyperEVM.
+                        </div>
+
+                        <div className="flex gap-3 w-full">
+                            <button
+                                onClick={cancelMismatch}
+                                className="flex-1 py-3 bg-[var(--bg-subtle)] text-[var(--text-secondary)] hover:bg-zinc-200 rounded-[10px] font-semibold transition-colors active:scale-[0.98]"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={proceedWithMismatchedAmount}
+                                className="flex-1 py-3 bg-black text-white hover:bg-zinc-800 rounded-[10px] font-semibold transition-all shadow-sm active:scale-[0.98]"
+                            >
+                                Deposit ${amountMismatchPayload.actualUSD.toFixed(2)}
+                            </button>
+                        </div>
                     </div>
                 )}
 
