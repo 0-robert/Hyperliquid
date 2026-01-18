@@ -14,6 +14,14 @@ const STEPS: Step[] = [
     { id: 'done', label: 'Done', states: ['SUCCESS'] },
 ];
 
+/** Format duration in seconds to human-readable string */
+function formatDuration(seconds: number): string {
+    if (seconds <= 0) return '';
+    if (seconds < 60) return `~${Math.round(seconds)}s`;
+    const minutes = Math.round(seconds / 60);
+    return `~${minutes}m`;
+}
+
 function getStepStatus(step: Step, currentState: BridgeState, error: string | null): 'completed' | 'current' | 'upcoming' | 'error' {
     const stepIndex = STEPS.findIndex(s => s.id === step.id);
     const currentStepIndex = STEPS.findIndex(s => s.states.includes(currentState));
@@ -32,13 +40,26 @@ function getStepStatus(step: Step, currentState: BridgeState, error: string | nu
 }
 
 export function ProgressSteps() {
-    const { state, error } = useBridgeState();
+    const { state, error, safetyPayload } = useBridgeState();
 
     // Don't show progress bar in IDLE state (before user starts)
     if (state === 'IDLE') return null;
 
+    // Show ETA during bridging if available
+    const showEta = (state === 'BRIDGING' || state === 'QUOTING') && safetyPayload?.estimatedDuration;
+    const etaText = showEta ? formatDuration(safetyPayload.estimatedDuration) : '';
+
     return (
         <div className="w-full px-2 py-3">
+            {/* ETA indicator during bridging */}
+            {etaText && (
+                <div className="flex items-center justify-center gap-1.5 mb-2 text-xs text-purple-600 font-medium">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>ETA: {etaText}</span>
+                </div>
+            )}
             <div className="flex items-center justify-between">
                 {STEPS.map((step, index) => {
                     const status = getStepStatus(step, state, error);

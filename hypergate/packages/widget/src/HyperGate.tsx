@@ -12,6 +12,18 @@ import { DemoModal } from './components/DemoModal';
 import './index.css';
 
 // =============================================================================
+// Helpers
+// =============================================================================
+
+/** Format duration in seconds to human-readable string (e.g., "~3 min" or "~45 sec") */
+function formatDuration(seconds: number): string {
+    if (seconds <= 0) return 'Unknown';
+    if (seconds < 60) return `~${Math.round(seconds)} sec`;
+    const minutes = Math.round(seconds / 60);
+    return `~${minutes} min`;
+}
+
+// =============================================================================
 // Types & Interfaces (Exported for consumers)
 // =============================================================================
 
@@ -126,8 +138,13 @@ export function HyperGate({
         const gasCostUSD = parseFloat(route.gasCostUSD || '0');
 
         // If gasCostUSD is missing, sum up steps
-        const totalGasUSD = gasCostUSD > 0 ? gasCostUSD : route.steps.reduce((acc: number, step: any) => {
-            return acc + (step.estimate.gasCosts?.reduce((gAcc: number, g: any) => gAcc + parseFloat(g.amountUSD), 0) || 0);
+        const totalGasUSD = gasCostUSD > 0 ? gasCostUSD : (route.steps || []).reduce((acc: number, step: any) => {
+            return acc + (step.estimate?.gasCosts?.reduce((gAcc: number, g: any) => gAcc + parseFloat(g.amountUSD || '0'), 0) || 0);
+        }, 0);
+
+        // Extract estimated execution duration from route steps (in seconds)
+        const estimatedDuration = (route.steps || []).reduce((acc: number, step: any) => {
+            return acc + (step.estimate?.executionDuration || 0);
         }, 0);
 
         const bridgeFeeUSD = fromAmountUSD - toAmountUSD - totalGasUSD; // Rough estimate of spread + fees
@@ -140,7 +157,8 @@ export function HyperGate({
             bridgeFee: Math.max(0, bridgeFeeUSD),
             gasCost: totalGasUSD,
             netAmount: netAmount,
-            isSafe: isSafe
+            isSafe: isSafe,
+            estimatedDuration: estimatedDuration
         });
 
         setPendingRoute(route);
@@ -297,7 +315,7 @@ export function HyperGate({
             fromAmountUSD: inputAmount.toFixed(2),
             toAmountUSD: mockDestAmount.toFixed(2),
             gasCostUSD: '1.20',
-            steps: []
+            steps: [{ estimate: { executionDuration: 180 } }] // Mock 3 minute ETA
         };
         handleSafetyCheck(mockCalculatedRoute);
     };
@@ -471,6 +489,10 @@ export function HyperGate({
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-[var(--text-secondary)]">Gas Costs</span>
                                 <span className="font-medium font-mono text-amber-600">-${safetyPayload.gasCost.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-[var(--text-secondary)]">Estimated Time</span>
+                                <span className="font-medium font-mono text-[var(--text-primary)]">{formatDuration(safetyPayload.estimatedDuration)}</span>
                             </div>
                             <div className="h-px bg-[var(--border-subtle)] my-2"></div>
                             <div className="flex justify-between items-center text-base font-bold">

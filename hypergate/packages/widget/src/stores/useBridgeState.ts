@@ -21,6 +21,8 @@ export interface SafetyGuardPayload {
     gasCost: number;
     netAmount: number;
     isSafe: boolean;
+    /** Estimated execution duration in seconds */
+    estimatedDuration: number;
 }
 
 interface BridgeStore {

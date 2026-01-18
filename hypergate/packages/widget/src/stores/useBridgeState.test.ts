@@ -84,6 +84,7 @@ describe('useBridgeState', () => {
                 gasCost: 1.5,
                 netAmount: 96.5,
                 isSafe: true,
+                estimatedDuration: 180,
             };
 
             useBridgeState.getState().setSafetyPayload(payload);
@@ -98,6 +99,7 @@ describe('useBridgeState', () => {
                 gasCost: 1.5,
                 netAmount: 3.5,
                 isSafe: false,
+                estimatedDuration: 120,
             };
 
             useBridgeState.getState().setSafetyPayload(payload);
@@ -113,6 +115,7 @@ describe('useBridgeState', () => {
                 gasCost: 1.5,
                 netAmount: 96.5,
                 isSafe: true,
+                estimatedDuration: 180,
             };
 
             useBridgeState.getState().setSafetyPayload(payload);
@@ -133,6 +136,7 @@ describe('useBridgeState', () => {
                 gasCost: 1.5,
                 netAmount: 96.5,
                 isSafe: true,
+                estimatedDuration: 180,
             });
 
             // Reset
