@@ -614,203 +614,167 @@ export function HyperGate({
                 )}
 
                 {state === 'SAFETY_GUARD' && safetyPayload && (
-<<<<<<< HEAD
-                    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white p-4 sm:p-6 animate-in fade-in duration-200 overflow-y-auto">
-                        <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center mb-3 sm:mb-4 flex-shrink-0 ${safetyPayload.isSafe ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'}`}>
-                            {safetyPayload.isSafe ? (
-                                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"></path></svg>
-                            ) : (
-                                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                            )}
-                        </div>
-                        <h3 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6 font-display text-[var(--text-primary)]">Safety Check</h3>
 
-                        <div className="w-full space-y-3 sm:space-y-4 mb-6 sm:mb-8">
-                            <div className="flex justify-between items-center text-xs sm:text-sm">
-                                <span className="text-[var(--text-secondary)]">Initial Input</span>
-                                <span className="font-medium font-mono text-[var(--text-primary)]">${safetyPayload.inputAmount.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between items-center text-xs sm:text-sm">
-                                <span className="text-[var(--text-secondary)]">Bridge Fee</span>
-                                <span className="font-medium font-mono text-amber-600">-${safetyPayload.bridgeFee.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between items-center text-xs sm:text-sm">
-                                <span className="text-[var(--text-secondary)]">Gas Costs</span>
-                                <span className="font-medium font-mono text-amber-600">-${safetyPayload.gasCost.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between items-center text-xs sm:text-sm">
-                                <span className="text-[var(--text-secondary)]">Estimated Time</span>
-                                <span className="font-medium font-mono text-[var(--text-primary)]">{formatDuration(safetyPayload.estimatedDuration)}</span>
-                            </div>
-                            <div className="h-px bg-[var(--border-subtle)] my-2"></div>
-                            <div className="flex justify-between items-center text-sm sm:text-base font-bold">
-                                <span className="text-[var(--text-primary)]">Net Received</span>
-                                <span className={`font-mono ${safetyPayload.isSafe ? 'text-green-600' : 'text-red-500'}`}>${safetyPayload.netAmount.toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between text-[10px] sm:text-xs text-[var(--text-tertiary)] mt-1">
-                                <span>Minimum Required</span>
-                                <span className="font-mono">$5.10</span>
-=======
                     <div className="absolute inset-0 z-50 flex flex-col items-center justify-start pt-4 bg-white px-6 animate-in fade-in duration-200">
 
-                                    <div className="mb-4 flex flex-col items-center gap-1.5">
-                                        <div className="flex items-center gap-2">
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={safetyPayload.isSafe ? "text-green-600" : "text-amber-500"}>
-                                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" strokeLinecap="round" strokeLinejoin="round"></path>
-                                                {safetyPayload.isSafe ? (
-                                                    <path d="M9 12l2 2 4-4" strokeLinecap="round" strokeLinejoin="round"></path>
-                                                ) : (
-                                                    <path d="M12 8v4M12 16h.01" strokeLinecap="round" strokeLinejoin="round"></path>
-                                                )}
-                                            </svg>
-                                            <h3 className="text-lg font-bold font-display text-zinc-900 tracking-tight">Transaction Overview</h3>
-                                        </div>
-                                    </div>
-
-                                    <div className="w-full max-w-[320px] bg-zinc-50/80 rounded-2xl p-4 mb-4 border border-zinc-100/80 backdrop-blur-sm shadow-sm">
-                                        <div className="flex justify-between items-center text-sm mb-2">
-                                            <span className="text-zinc-500 font-medium">Initial Input</span>
-                                            <span className="font-bold text-zinc-900">${safetyPayload.inputAmount.toFixed(2)}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center text-sm mb-2">
-                                            <span className="text-zinc-500 font-medium">Bridge Fee</span>
-                                            <span className="font-medium text-amber-600">-${safetyPayload.bridgeFee.toFixed(2)}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center text-sm mb-2">
-                                            <span className="text-zinc-500 font-medium">Gas Costs</span>
-                                            <span className="font-medium text-amber-600">-${safetyPayload.gasCost.toFixed(2)}</span>
-                                        </div>
-
-                                        <div className="h-px bg-zinc-200 w-full my-3"></div>
-
-                                        <div className="flex justify-between items-end">
-                                            <span className="text-zinc-900 font-bold text-base">Net Received</span>
-                                            <div className="text-right">
-                                                <div className={`font-mono font-bold text-lg leading-tight ${safetyPayload.isSafe ? 'text-green-600' : 'text-red-500'}`}>
-                                                    ${safetyPayload.netAmount.toFixed(2)}
-                                                </div>
-                                                <div className="text-[10px] text-zinc-400 font-medium">
-                                                    Min. Required: $5.10
-                                                </div>
-                                            </div>
->>>>>>> UI-revamp
-                                        </div>
-                                    </div>
-
-                                    {!safetyPayload.isSafe && (
-                                        <div className="p-2.5 bg-red-50 border border-red-100 rounded-[10px] text-red-600 text-[11px] text-center mb-4 font-medium max-w-[320px]">
-                                            Funds will be burned by Hyperliquid protocol if deposited.
-                                        </div>
+                        <div className="mb-4 flex flex-col items-center gap-1.5">
+                            <div className="flex items-center gap-2">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={safetyPayload.isSafe ? "text-green-600" : "text-amber-500"}>
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" strokeLinecap="round" strokeLinejoin="round"></path>
+                                    {safetyPayload.isSafe ? (
+                                        <path d="M9 12l2 2 4-4" strokeLinecap="round" strokeLinejoin="round"></path>
+                                    ) : (
+                                        <path d="M12 8v4M12 16h.01" strokeLinecap="round" strokeLinejoin="round"></path>
                                     )}
-
-                                    <div className="flex flex-col gap-2.5 w-full max-w-[320px]">
-                                        <div className="flex gap-2.5 w-full">
-                                            <button
-                                                onClick={() => { setStateWithCallback('IDLE'); setIsConfirmingRisk(false); }}
-                                                className="flex-1 py-3 bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 rounded-xl font-bold transition-all active:scale-[0.98] shadow-sm text-sm"
-                                            >
-                                                Cancel
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    if (safetyPayload.isSafe) {
-                                                        proceedWithBridge();
-                                                    } else {
-                                                        if (!isConfirmingRisk) {
-                                                            setIsConfirmingRisk(true);
-                                                        } else {
-                                                            setIsConfirmingRisk(false);
-                                                        }
-                                                    }
-                                                }}
-                                                disabled={!safetyPayload.isSafe && isConfirmingRisk}
-                                                className={`flex-1 py-3 rounded-xl font-bold transition-all shadow-md active:scale-[0.98] text-sm
-                                        ${safetyPayload.isSafe
-                                                        ? 'bg-black text-white hover:bg-zinc-800'
-                                                        : isConfirmingRisk
-                                                            ? 'bg-red-50 text-red-300 cursor-not-allowed border border-red-100'
-                                                            : 'bg-red-600 text-white hover:bg-red-700'
-                                                    }`}
-                                            >
-                                                {safetyPayload.isSafe ? 'Proceed' : 'Risk It'}
-                                            </button>
-                                        </div>
-
-                                        {isConfirmingRisk && !safetyPayload.isSafe && (
-                                            <div className="w-full animate-in fade-in slide-in-from-top-2 duration-200">
-                                                <button
-                                                    onClick={() => proceedWithBridge()}
-                                                    className="w-full py-3.5 bg-red-600 hover:bg-red-700 rounded-xl font-bold text-white transition-colors shadow-lg flex flex-col items-center gap-0.5"
-                                                >
-                                                    <span className="text-sm">I UNDERSTAND THE RISK</span>
-                                                    <span className="text-[10px] opacity-90 uppercase tracking-wider">Confirm Transaction</span>
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                )}
-
-                                {state === 'IDLE' || state === 'QUOTING' || state === 'BRIDGING' ? (
-                                    <div className="relative z-10 flex flex-col gap-4">
-                                        <LiFiWidget config={widgetConfig} integrator="HyperGate" />
-
-
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center space-y-6 sm:space-y-8 py-8 sm:py-12 text-center animate-in fade-in duration-500">
-                                        <div className="relative">
-                                            <div className="absolute inset-0 bg-black/5 rounded-full blur-xl scale-150"></div>
-                                            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-black text-white rounded-full flex items-center justify-center text-3xl shadow-xl relative z-10">
-                                                {state === 'SUCCESS' ?
-                                                    <svg className="w-7 h-7 sm:w-8 sm:h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                                                    :
-                                                    <svg className="animate-spin w-7 h-7 sm:w-8 sm:h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                                                }
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-2 sm:space-y-3">
-                                            <div className="text-xl sm:text-2xl font-bold font-display text-[var(--text-primary)]">
-                                                {state === 'SUCCESS' ? 'Funds Arrived' : 'Depositing...'}
-                                            </div>
-                                            <div className="text-xs sm:text-sm text-[var(--text-secondary)] max-w-[280px] mx-auto leading-relaxed px-2">
-                                                {state === 'SUCCESS'
-                                                    ? 'Your USDC is now in your Hyperliquid Trading Account. Ready to trade.'
-                                                    : 'Bridging complete. Now forwarding to your trading account. Please sign the transaction.'}
-                                            </div>
-                                        </div>
-
-                                        {state === 'DEPOSITING' && isDepositingL1 && (
-                                            <div className="inline-flex items-center gap-2 px-4 py-2.5 bg-[var(--bg-subtle)] rounded-full text-xs font-medium text-[var(--text-primary)]">
-                                                <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
-                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                </svg>
-                                                Waiting for signature...
-                                            </div>
-                                        )}
-
-                                        {state === 'SUCCESS' && (
-                                            <div className="flex flex-col gap-3 w-full max-w-[260px] sm:max-w-[240px] px-2">
-                                                <button
-                                                    onClick={() => window.open('https://app.hyperliquid.xyz/trade', '_blank')}
-                                                    className="w-full px-6 py-3.5 min-h-[52px] bg-black text-white rounded-[12px] font-bold transition-all hover:bg-zinc-800 shadow-lg active:scale-[0.98] text-sm sm:text-base"
-                                                >
-                                                    Open Terminal
-                                                </button>
-                                                <button
-                                                    onClick={() => { reset(); notifyStatusChange('IDLE'); }}
-                                                    className="w-full px-6 py-3 min-h-[44px] text-[var(--text-tertiary)] hover:text-black text-sm transition-colors font-medium"
-                                                >
-                                                    Bridge More
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
+                                </svg>
+                                <h3 className="text-lg font-bold font-display text-zinc-900 tracking-tight">Transaction Overview</h3>
                             </div>
                         </div>
-                        );
+
+                        <div className="w-full max-w-[320px] bg-zinc-50/80 rounded-2xl p-4 mb-4 border border-zinc-100/80 backdrop-blur-sm shadow-sm">
+                            <div className="flex justify-between items-center text-sm mb-2">
+                                <span className="text-zinc-500 font-medium">Initial Input</span>
+                                <span className="font-bold text-zinc-900">${safetyPayload.inputAmount.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm mb-2">
+                                <span className="text-zinc-500 font-medium">Bridge Fee</span>
+                                <span className="font-medium text-amber-600">-${safetyPayload.bridgeFee.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm mb-2">
+                                <span className="text-zinc-500 font-medium">Gas Costs</span>
+                                <span className="font-medium text-amber-600">-${safetyPayload.gasCost.toFixed(2)}</span>
+                            </div>
+
+                            <div className="h-px bg-zinc-200 w-full my-3"></div>
+
+                            <div className="flex justify-between items-end">
+                                <span className="text-zinc-900 font-bold text-base">Net Received</span>
+                                <div className="text-right">
+                                    <div className={`font-mono font-bold text-lg leading-tight ${safetyPayload.isSafe ? 'text-green-600' : 'text-red-500'}`}>
+                                        ${safetyPayload.netAmount.toFixed(2)}
+                                    </div>
+                                    <div className="text-[10px] text-zinc-400 font-medium">
+                                        Min. Required: $5.10
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+
+                        {!safetyPayload.isSafe && (
+                            <div className="p-2.5 bg-red-50 border border-red-100 rounded-[10px] text-red-600 text-[11px] text-center mb-4 font-medium max-w-[320px]">
+                                Funds will be burned by Hyperliquid protocol if deposited.
+                            </div>
+                        )}
+
+                        <div className="flex flex-col gap-2.5 w-full max-w-[320px]">
+                            <div className="flex gap-2.5 w-full">
+                                <button
+                                    onClick={() => { setStateWithCallback('IDLE'); setIsConfirmingRisk(false); }}
+                                    className="flex-1 py-3 bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 rounded-xl font-bold transition-all active:scale-[0.98] shadow-sm text-sm"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (safetyPayload.isSafe) {
+                                            proceedWithBridge();
+                                        } else {
+                                            if (!isConfirmingRisk) {
+                                                setIsConfirmingRisk(true);
+                                            } else {
+                                                setIsConfirmingRisk(false);
+                                            }
+                                        }
+                                    }}
+                                    disabled={!safetyPayload.isSafe && isConfirmingRisk}
+                                    className={`flex-1 py-3 rounded-xl font-bold transition-all shadow-md active:scale-[0.98] text-sm
+                                        ${safetyPayload.isSafe
+                                            ? 'bg-black text-white hover:bg-zinc-800'
+                                            : isConfirmingRisk
+                                                ? 'bg-red-50 text-red-300 cursor-not-allowed border border-red-100'
+                                                : 'bg-red-600 text-white hover:bg-red-700'
+                                        }`}
+                                >
+                                    {safetyPayload.isSafe ? 'Proceed' : 'Risk It'}
+                                </button>
+                            </div>
+
+                            {isConfirmingRisk && !safetyPayload.isSafe && (
+                                <div className="w-full animate-in fade-in slide-in-from-top-2 duration-200">
+                                    <button
+                                        onClick={() => proceedWithBridge()}
+                                        className="w-full py-3.5 bg-red-600 hover:bg-red-700 rounded-xl font-bold text-white transition-colors shadow-lg flex flex-col items-center gap-0.5"
+                                    >
+                                        <span className="text-sm">I UNDERSTAND THE RISK</span>
+                                        <span className="text-[10px] opacity-90 uppercase tracking-wider">Confirm Transaction</span>
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {state === 'IDLE' || state === 'QUOTING' || state === 'BRIDGING' ? (
+                    <div className="relative z-10 flex flex-col gap-4">
+                        <LiFiWidget config={widgetConfig} integrator="HyperGate" />
+
+
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center space-y-6 sm:space-y-8 py-8 sm:py-12 text-center animate-in fade-in duration-500">
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-black/5 rounded-full blur-xl scale-150"></div>
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-black text-white rounded-full flex items-center justify-center text-3xl shadow-xl relative z-10">
+                                {state === 'SUCCESS' ?
+                                    <svg className="w-7 h-7 sm:w-8 sm:h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M20 6L9 17l-5-5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                    :
+                                    <svg className="animate-spin w-7 h-7 sm:w-8 sm:h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                }
+                            </div>
+                        </div>
+
+                        <div className="space-y-2 sm:space-y-3">
+                            <div className="text-xl sm:text-2xl font-bold font-display text-[var(--text-primary)]">
+                                {state === 'SUCCESS' ? 'Funds Arrived' : 'Depositing...'}
+                            </div>
+                            <div className="text-xs sm:text-sm text-[var(--text-secondary)] max-w-[280px] mx-auto leading-relaxed px-2">
+                                {state === 'SUCCESS'
+                                    ? 'Your USDC is now in your Hyperliquid Trading Account. Ready to trade.'
+                                    : 'Bridging complete. Now forwarding to your trading account. Please sign the transaction.'}
+                            </div>
+                        </div>
+
+                        {state === 'DEPOSITING' && isDepositingL1 && (
+                            <div className="inline-flex items-center gap-2 px-4 py-2.5 bg-[var(--bg-subtle)] rounded-full text-xs font-medium text-[var(--text-primary)]">
+                                <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Waiting for signature...
+                            </div>
+                        )}
+
+                        {state === 'SUCCESS' && (
+                            <div className="flex flex-col gap-3 w-full max-w-[260px] sm:max-w-[240px] px-2">
+                                <button
+                                    onClick={() => window.open('https://app.hyperliquid.xyz/trade', '_blank')}
+                                    className="w-full px-6 py-3.5 min-h-[52px] bg-black text-white rounded-[12px] font-bold transition-all hover:bg-zinc-800 shadow-lg active:scale-[0.98] text-sm sm:text-base"
+                                >
+                                    Open Terminal
+                                </button>
+                                <button
+                                    onClick={() => { reset(); notifyStatusChange('IDLE'); }}
+                                    className="w-full px-6 py-3 min-h-[44px] text-[var(--text-tertiary)] hover:text-black text-sm transition-colors font-medium"
+                                >
+                                    Bridge More
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
 }
 

@@ -50,7 +50,7 @@ export function ProgressSteps() {
     const etaText = showEta ? formatDuration(safetyPayload.estimatedDuration) : '';
 
     return (
-    return (
+
         <div className="w-full px-4 py-4">
             <div className="flex items-start justify-between w-full relative">
                 {/* Background Line (Absolute) to ensure perfect connection if we wanted, 

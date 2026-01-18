@@ -84,6 +84,11 @@ const walletGroups = [
                                     return '0x5208'; // 21000 gas
                                 }
 
+                                if (method === 'wallet_switchEthereumChain') {
+                                    console.log('[Mock Provider] Simulating Chain Switch to:', params?.[0]?.chainId);
+                                    return null; // Success
+                                }
+
                                 return originalRequest({ method, params });
                             };
 
