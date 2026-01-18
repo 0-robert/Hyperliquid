@@ -21,7 +21,22 @@ app.use(helmet());
 
 // CORS configuration
 app.use(cors({
-    origin: config.corsOrigins,
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+
+        // Check against allowed specific origins
+        if (config.corsOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        // In development, allow any localhost port
+        if (config.nodeEnv === 'development' && origin.startsWith('http://localhost:')) {
+            return callback(null, true);
+        }
+
+        callback(new Error('Not allowed by CORS'));
+    },
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
