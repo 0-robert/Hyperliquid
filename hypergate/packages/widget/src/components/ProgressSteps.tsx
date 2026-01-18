@@ -50,30 +50,27 @@ export function ProgressSteps() {
     const etaText = showEta ? formatDuration(safetyPayload.estimatedDuration) : '';
 
     return (
-        <div className="w-full px-1 sm:px-2 py-2 sm:py-3">
-            {/* ETA indicator during bridging */}
-            {etaText && (
-                <div className="flex items-center justify-center gap-1.5 mb-2 text-xs text-purple-600 font-medium">
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>ETA: {etaText}</span>
-                </div>
-            )}
-            <div className="flex items-center justify-between">
+    return (
+        <div className="w-full px-4 py-4">
+            <div className="flex items-start justify-between w-full relative">
+                {/* Background Line (Absolute) to ensure perfect connection if we wanted, 
+                    but flex Lines between items is safer for responsive spacing. 
+                    Let's stick to flex lines between items. */}
+
                 {STEPS.map((step, index) => {
                     const status = getStepStatus(step, state, error);
+                    const isLast = index === STEPS.length - 1;
 
                     return (
-                        <div key={step.id} className="flex items-center flex-1">
-                            {/* Step Circle */}
-                            <div className="flex flex-col items-center">
+                        <div key={step.id} className={`flex ${isLast ? '' : 'flex-1'} items-center`}>
+                            {/* Step Circle & Label Container */}
+                            <div className="flex flex-col items-center relative z-10 shrink-0">
                                 <div
                                     className={`
                                         w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold transition-all duration-300
                                         ${status === 'completed' ? 'bg-green-500 text-white' : ''}
-                                        ${status === 'current' ? 'bg-purple-600 text-white ring-2 sm:ring-4 ring-purple-600/30 animate-pulse' : ''}
-                                        ${status === 'upcoming' ? 'bg-white/10 text-gray-500' : ''}
+                                        ${status === 'current' ? 'bg-purple-600 text-white ring-4 ring-purple-600/30 animate-pulse' : ''}
+                                        ${status === 'upcoming' ? 'bg-zinc-100 text-zinc-400' : ''}
                                         ${status === 'error' ? 'bg-red-500 text-white' : ''}
                                     `}
                                 >
@@ -91,24 +88,24 @@ export function ProgressSteps() {
                                 </div>
                                 <span
                                     className={`
-                                        mt-1 text-[9px] sm:text-[10px] font-medium transition-colors hidden xs:block
-                                        ${status === 'completed' ? 'text-green-400' : ''}
-                                        ${status === 'current' ? 'text-purple-400' : ''}
-                                        ${status === 'upcoming' ? 'text-gray-600' : ''}
-                                        ${status === 'error' ? 'text-red-400' : ''}
+                                        absolute top-full mt-1.5 text-[10px] font-bold uppercase tracking-wider whitespace-nowrap transition-colors
+                                        ${status === 'completed' ? 'text-green-500' : ''}
+                                        ${status === 'current' ? 'text-purple-600' : ''}
+                                        ${status === 'upcoming' ? 'text-zinc-300' : ''}
+                                        ${status === 'error' ? 'text-red-500' : ''}
                                     `}
                                 >
                                     {step.label}
                                 </span>
                             </div>
 
-                            {/* Connector Line */}
-                            {index < STEPS.length - 1 && (
-                                <div className="flex-1 mx-0.5 sm:mx-1">
+                            {/* Connector Line (Not for last item) */}
+                            {!isLast && (
+                                <div className="flex-1 h-[2px] mx-2 mt-[-14px]">
                                     <div
                                         className={`
-                                            h-0.5 transition-all duration-500
-                                            ${status === 'completed' ? 'bg-green-500' : 'bg-white/10'}
+                                            h-full w-full rounded-full transition-all duration-500
+                                            ${status === 'completed' ? 'bg-green-500' : 'bg-zinc-100'}
                                         `}
                                     />
                                 </div>
