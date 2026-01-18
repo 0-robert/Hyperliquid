@@ -3,6 +3,7 @@ import { depositService } from '../services/index.js';
 import blockchainService from '../services/blockchain.js';
 import { ApiError } from '../middleware/errorHandler.js';
 import { depositRateLimit, walletRateLimit, strictRateLimit } from '../middleware/rateLimit.js';
+import { webhookAuth } from '../middleware/webhookAuth.js';
 import {
     CreateDepositRequestSchema,
     UpdateDepositStatusSchema,
@@ -192,8 +193,10 @@ router.get('/stats', async (_req: Request, res: Response, next: NextFunction) =>
  * Bridge success webhook (called after frontend completes bridge)
  * POST /api/deposits/bridge-success
  * Rate limited: 10 requests per minute per IP
+ * Protected: HMAC signature verification required
  */
 router.post('/bridge-success',
+    webhookAuth,
     ...(applyRateLimit ? [depositRateLimit] : []),
     async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -244,8 +247,10 @@ router.post('/bridge-success',
  * L1 deposit success webhook (called after L1 deposit completes)
  * POST /api/deposits/l1-success
  * Rate limited: 10 requests per minute per IP
+ * Protected: HMAC signature verification required
  */
 router.post('/l1-success',
+    webhookAuth,
     ...(applyRateLimit ? [depositRateLimit] : []),
     async (req: Request, res: Response, next: NextFunction) => {
     try {

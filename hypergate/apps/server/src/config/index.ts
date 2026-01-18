@@ -4,6 +4,11 @@ import { ServerConfig } from '../types/index.js';
 // Load environment variables
 dotenv.config();
 
+// Verified mainnet addresses from Hyperliquid/Circle documentation
+// Reference: https://docs.chainstack.com/docs/hyperliquid-bridging-usdc
+const MAINNET_USDC_ADDRESS = '0xb88339CB7199b77E23DB6E890353E22632Ba630f';
+const MAINNET_BRIDGE_ADDRESS = '0x6b9e773128f453f5c2c60935ee2de2cbc5390a24';
+
 /**
  * Server configuration loaded from environment variables
  */
@@ -12,11 +17,12 @@ export const config: ServerConfig = {
     nodeEnv: (process.env.NODE_ENV as ServerConfig['nodeEnv']) || 'development',
     corsOrigins: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:5173', 'http://localhost:5174'],
     rpcUrl: process.env.RPC_URL || 'https://rpc.hyperliquid.xyz/evm',
-    usdcAddress: (process.env.USDC_ADDRESS || '0xb88339cb01e41113264632ba630f') as `0x${string}`,
-    bridgeAddress: (process.env.BRIDGE_ADDRESS || '0x2df1c51e09aecf9cacb7bc98cb1742757f163df7') as `0x${string}`,
+    usdcAddress: (process.env.USDC_ADDRESS || MAINNET_USDC_ADDRESS) as `0x${string}`,
+    bridgeAddress: (process.env.BRIDGE_ADDRESS || MAINNET_BRIDGE_ADDRESS) as `0x${string}`,
     databaseUrl: process.env.DATABASE_URL,
     redisUrl: process.env.REDIS_URL,
     logLevel: (process.env.LOG_LEVEL as ServerConfig['logLevel']) || 'info',
+    webhookSecret: process.env.WEBHOOK_SECRET,
 };
 
 /**

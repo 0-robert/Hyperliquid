@@ -7,6 +7,11 @@ import config from './config/index.js';
 import logger from './utils/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { generalRateLimit } from './middleware/rateLimit.js';
+import {
+    preserveRawBody,
+    WEBHOOK_SIGNATURE_HEADER,
+    WEBHOOK_TIMESTAMP_HEADER,
+} from './middleware/webhookAuth.js';
 import healthRoutes from './routes/health.js';
 import depositRoutes from './routes/deposits.js';
 
@@ -23,7 +28,12 @@ app.use(helmet());
 app.use(cors({
     origin: config.corsOrigins,
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        WEBHOOK_SIGNATURE_HEADER,
+        WEBHOOK_TIMESTAMP_HEADER,
+    ],
     credentials: true,
 }));
 
@@ -36,8 +46,11 @@ if (config.nodeEnv !== 'test') {
     }));
 }
 
-// Body parsing
-app.use(express.json({ limit: '1mb' }));
+// Body parsing (with raw body preservation for webhook signature verification)
+app.use(express.json({
+    limit: '1mb',
+    verify: preserveRawBody,
+}));
 app.use(express.urlencoded({ extended: true }));
 
 // Rate limiting (applies to all API routes)

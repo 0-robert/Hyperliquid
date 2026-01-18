@@ -123,6 +123,8 @@ export interface ServerConfig {
     databaseUrl?: string;
     redisUrl?: string;
     logLevel: 'debug' | 'info' | 'warn' | 'error';
+    /** Secret for HMAC webhook signature verification */
+    webhookSecret?: string;
 }
 
 // ============================================================================
