@@ -25,7 +25,8 @@ export const hyperEvm = defineChain({
 // 1. Create a Test Account
 // 1. Create a Test Account (Impersonating a specific wealthy address for Demo)
 // We use a string address so Wagmi doesn't try to derive it from a private key.
-const TEST_ADDRESS = '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045'; // Vitalik.eth
+// Binance Hot Wallet 14 (Arbitrum Whale)
+const TEST_ADDRESS = '0xF977814e90dA44bFA03b6295A0616a897441aceC';
 
 // 2. Setup Connectors
 const isDevelopment = import.meta.env.DEV;
@@ -53,13 +54,47 @@ const walletGroups = [
                     }
                 },
                 createConnector: (walletDetails: any) => {
-                    return createConnector((config: any) => ({
-                        ...mock({
-                            accounts: [TEST_ADDRESS],
-                            features: { reconnect: true },
-                        })(config),
-                        ...walletDetails,
-                    }));
+                    // Create the base mock connector
+                    const mockConnectorFn = mock({
+                        accounts: [TEST_ADDRESS],
+                        features: { reconnect: true },
+                    });
+
+                    return createConnector((config: any) => {
+                        // Initialize the connector instance
+                        const connector = mockConnectorFn(config);
+
+                        // Override getProvider to inject our custom request handler
+                        const originalGetProvider = connector.getProvider;
+                        connector.getProvider = async () => {
+                            const provider = await originalGetProvider();
+                            const originalRequest = provider.request;
+
+                            // Monkey-patch the request method
+                            provider.request = async ({ method, params }: any) => {
+                                console.log('[Mock Provider] Intercepting:', method, params);
+
+                                if (method === 'eth_sendTransaction') {
+                                    console.log('[Mock Provider] Simulating Success for:', method);
+                                    // Return a random 32-byte hex string (fake tx hash)
+                                    return '0x' + Array(64).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+                                }
+
+                                if (method === 'eth_estimateGas') {
+                                    return '0x5208'; // 21000 gas
+                                }
+
+                                return originalRequest({ method, params });
+                            };
+
+                            return provider;
+                        };
+
+                        return {
+                            ...connector,
+                            ...walletDetails,
+                        };
+                    });
                 }
             })
         ],
@@ -78,15 +113,31 @@ const connectors = connectorsForWallets(
     }
 );
 
-export const config = createConfig({
-    connectors,
-    chains: [mainnet, arbitrum, optimism, base, hyperEvm],
-    transports: {
+// Conditional Configuration to respect user's "Separate Demo Changes" rule
+// Dev: Limit chains to avoid 429 errors from public RPCs during heavy dev usage
+// Prod: Full chain list
+const chains = isDevelopment
+    ? [mainnet, arbitrum, hyperEvm] as const
+    : [mainnet, arbitrum, optimism, base, hyperEvm] as const;
+
+const transports = isDevelopment
+    ? {
+        [mainnet.id]: http(),
+        [arbitrum.id]: http(),
+        [hyperEvm.id]: http(),
+    }
+    : {
         [mainnet.id]: http(),
         [arbitrum.id]: http(),
         [optimism.id]: http(),
         [base.id]: http(),
         [hyperEvm.id]: http(),
-    },
+    };
+
+export const config = createConfig({
+    connectors,
+    chains,
+    transports,
     ssr: false,
 });
+

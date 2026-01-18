@@ -1,7 +1,7 @@
 import '@rainbow-me/rainbowkit/styles.css';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
-import { WagmiProvider, useAccount } from 'wagmi';
+import { WagmiProvider, useAccount, useConnect, useDisconnect } from 'wagmi';
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { config } from './wagmi';
 import { HyperGate } from '@hypergate/widget';
@@ -14,24 +14,71 @@ import './App.css';
 
 const queryClient = new QueryClient();
 
+// Keep this consistent with wagmi.ts
 const DEMO_ADDRESS = '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045' as `0x${string}`;
 
 function BridgePage() {
   const { address: connectedAddress } = useAccount();
+  const { connectAsync, connectors } = useConnect();
+  const { disconnectAsync } = useDisconnect();
   const [isDemoMode, setIsDemoMode] = useState(false);
   const { toasts, addToast, dismissToast } = useToast();
 
   const activeAddress = isDemoMode ? DEMO_ADDRESS : connectedAddress;
 
-  const enterDemoMode = () => {
-    setIsDemoMode(true);
-    addToast('Demo mode activated! Transactions are simulated.', 'info');
+  const enterDemoMode = async () => {
+    try {
+      // 1. Disconnect any existing wallet
+      await disconnectAsync();
+
+      // 2. Find the Mock/Test Wallet connector
+      // Logs showed: {id: 'mock', name: 'Mock Connector'}
+      console.log('Available connectors:', connectors.map(c => ({ id: c.id, name: c.name })));
+      const testConnector = connectors.find(c => c.id === 'mock' || c.name === 'Mock Connector');
+
+      if (testConnector) {
+        await connectAsync({ connector: testConnector });
+        setIsDemoMode(true);
+        addToast('Demo simulation activated. Test Wallet connected.', 'info');
+      } else {
+        console.error('Test connector not found', connectors);
+        addToast('Error: Test Wallet connector missing.', 'error');
+      }
+    } catch (err) {
+      console.error('Failed to enter demo mode:', err);
+      addToast('Failed to activate demo mode.', 'error');
+    }
   };
 
-  const exitDemoMode = () => {
+  const exitDemoMode = async () => {
+    await disconnectAsync();
     setIsDemoMode(false);
-    addToast('Demo mode exited.', 'info');
+    addToast('Demo simulation ended.', 'info');
   };
+
+  // Secret Trigger: Press ']' 3 times quickly to enter demo mode
+  useEffect(() => {
+    const keys: number[] = [];
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === ']') {
+        const now = Date.now();
+        keys.push(now);
+        // Keep only last 3 presses
+        if (keys.length > 3) keys.shift();
+
+        // Check if 3 presses happened within 800ms
+        if (keys.length === 3 && (now - keys[0]) < 800) {
+          console.log('HyperGate: Demo Mode Activated Successfully');
+          enterDemoMode();
+          // Reset keys to prevent double trigger
+          keys.length = 0;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   return (
     <div className="app-container">
@@ -158,11 +205,7 @@ function BridgePage() {
                     </ConnectButton.Custom>
                   </div>
 
-                  <div className="pt-6">
-                    <button onClick={enterDemoMode} className="text-xs font-bold text-zinc-400 hover:text-black uppercase tracking-widest transition-colors">
-                      Initialize Simulation
-                    </button>
-                  </div>
+
                 </div>
               )}
             </div>
