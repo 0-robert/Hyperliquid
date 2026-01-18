@@ -1,4 +1,4 @@
-import { useRef, useLayoutEffect, useState, ReactNode } from 'react';
+import { useRef, useLayoutEffect, useState, type ReactNode } from 'react';
 import {
     motion,
     useScroll,
@@ -115,7 +115,7 @@ export const ScrollVelocity = ({
         });
 
         const directionFactor = useRef(1);
-        useAnimationFrame((t, delta) => {
+        useAnimationFrame((_t, delta) => {
             let moveBy = directionFactor.current * baseVelocity * (delta / 1000);
 
             if (velocityFactor.get() < 0) {

@@ -52,7 +52,9 @@ const walletGroups = [
                         steps: []
                     }
                 },
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 createConnector: (walletDetails: any) => {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     return createConnector((config: any) => ({
                         ...mock({
                             accounts: [TEST_ADDRESS],

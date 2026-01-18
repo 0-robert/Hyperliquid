@@ -83,11 +83,12 @@ export function useL1Deposit() {
 
             return txHash;
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             setIsSimulating(false);
 
             // Check for gas errors
-            if (error.message?.includes('insufficient funds') || error.message?.includes('gas')) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            if (errorMessage.includes('insufficient funds') || errorMessage.includes('gas')) {
                 throw new Error('Insufficient HYPE for gas. Please use Gas Refuel.');
             }
             throw error;

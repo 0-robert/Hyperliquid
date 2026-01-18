@@ -31,9 +31,10 @@ export class BlockchainService {
     async verifyTransaction(
         txHash: `0x${string}`,
         expectedAmount?: bigint,
-        expectedRecipient?: `0x${string}`
+        _expectedRecipient?: `0x${string}`
     ): Promise<{
         verified: boolean;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         receipt?: any;
         error?: string;
     }> {

@@ -1,7 +1,7 @@
 import prisma from '../lib/prisma.js';
 import logger from '../utils/logger.js';
 import type { Deposit, CreateDepositRequest, UpdateDepositStatus } from '../types/index.js';
-import type { DepositStatus } from '../generated/prisma/index.js';
+import type { DepositStatus } from '@prisma/client';
 
 /**
  * Prisma-based deposit service for production use

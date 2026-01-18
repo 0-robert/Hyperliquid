@@ -16,4 +16,25 @@ export default defineConfig({
   optimizeDeps: {
     include: ['@lifi/widget', '@lifi/sdk'],
   },
+  build: {
+    // Web3 apps have inherently large dependencies (wallet SDKs, chain configs)
+    // These are industry standard sizes for apps with RainbowKit + LI.FI
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Core React + UI framework
+          'react-vendor': ['react', 'react-dom'],
+          // Web3 wallet connectors
+          'wallet-core': ['wagmi', 'viem', '@tanstack/react-query'],
+          // RainbowKit (wallet UI)
+          'rainbowkit': ['@rainbow-me/rainbowkit'],
+          // LI.FI SDK (bridge logic)
+          'lifi-sdk': ['@lifi/sdk'],
+          // LI.FI Widget (bridge UI) - largest chunk
+          'lifi-widget': ['@lifi/widget'],
+        },
+      },
+    },
+  },
 })

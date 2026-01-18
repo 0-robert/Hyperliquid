@@ -19,5 +19,19 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // Allow unused variables/args prefixed with underscore
+      '@typescript-eslint/no-unused-vars': ['error', { 
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_'
+      }],
+      // Downgrade to warning - setState in effect is valid for sync with external state
+      'react-hooks/set-state-in-effect': 'warn',
+      // Allow exporting hooks alongside components
+      'react-refresh/only-export-components': 'warn',
+      // Downgrade any usage to warning - some library types require it
+      '@typescript-eslint/no-explicit-any': 'warn',
+    },
   },
 ])

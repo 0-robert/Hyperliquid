@@ -3,9 +3,114 @@
 #root {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 1rem;
   text-align: center;
 }
+
+@media (min-width: 640px) {
+  #root {
+    padding: 2rem;
+  }
+}
+
+/* Prevent iOS zoom on input focus - ensures 16px minimum font */
+input, select, textarea {
+  font-size: 16px !important;
+}
+
+/* Improve touch scrolling */
+html {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent text selection on buttons for cleaner UX */
+button {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+/* Safe area insets for notched devices */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .fixed.bottom-4,
+  .fixed.bottom-6,
+  .fixed.bottom-8 {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Prevent overscroll/pull-to-refresh */
+html, body {
+  overscroll-behavior: none;
+  overflow-x: hidden;
+}
+
+/* PWA standalone mode adjustments */
+@media (display-mode: standalone) {
+  body {
+    /* Extra padding for status bar in standalone mode */
+    padding-top: env(safe-area-inset-top);
+  }
+}
+
+/* ============================================
+   REDUCED MOTION SUPPORT
+   Respects user's system preferences
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  /* Disable specific animations */
+  .animate-pulse,
+  .animate-ping,
+  .animate-spin,
+  .animate-bounce {
+    animation: none !important;
+  }
+  
+  /* Keep essential state indicators visible without animation */
+  .animate-pulse {
+    opacity: 1 !important;
+  }
+  
+  .animate-ping {
+    opacity: 0 !important;
+  }
+}
+
+/* ============================================
+   SKELETON LOADING ANIMATION
+   ============================================ */
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-shimmer {
+  animation: shimmer 1.5s ease-in-out infinite;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer {
+    animation: none;
+    background: #e0e0e0;
+  }
+}
+
+/* ============================================
+   EXISTING STYLES
+   ============================================ */
 
 .logo {
   height: 6em;
@@ -61,4 +166,32 @@
 
 .animate-slide-in {
   animation: slide-in 0.3s ease-out forwards;
+}
+
+/* Mobile-friendly toast positioning */
+@media (max-width: 639px) {
+  .toast-container {
+    left: 1rem;
+    right: 1rem;
+    bottom: 5rem;
+  }
+}
+
+/* Focus visible styles for accessibility */
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid #A855F7;
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  button {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Dark mode placeholder (if needed later) */
+@media (prefers-color-scheme: dark) {
+  /* Dark mode overrides can go here */
 }

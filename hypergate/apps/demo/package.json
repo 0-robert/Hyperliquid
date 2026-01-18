@@ -10,26 +10,21 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@babel/runtime": "^7.28.6",
     "@hypergate/widget": "*",
     "@rainbow-me/rainbowkit": "^2.2.10",
     "@tanstack/react-query": "^5.90.18",
-    "camelcase-css": "^2.0.1",
-    "fastq": "^1.20.1",
-    "is-extglob": "^2.1.1",
     "motion": "^12.26.2",
     "ogl": "^1.0.11",
+    "qrcode": "^1.5.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-style-singleton": "^2.2.3",
-    "run-parallel": "^1.2.0",
-    "source-map-js": "^1.2.1",
     "viem": "^2.44.4",
     "wagmi": "^2.19.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@types/node": "^24.10.1",
+    "@types/qrcode": "^1.5.5",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",

@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { LiFiWidget, useWidgetEvents, WidgetEvent } from '@lifi/widget';
+import type { Route } from '@lifi/sdk';
 import { useBridgeState, type BridgeState } from './stores/useBridgeState';
 import { CHAINS, CONTRACTS, LIMITS } from './config/constants';
 import { usePublicClient } from 'wagmi';
@@ -98,18 +99,32 @@ export function HyperGate({
         notifyStatusChange(newState);
     }, [setState, notifyStatusChange]);
 
-    // Configuration for the LI.FI widget
-    const widgetConfig: any = {
+    // Detect mobile viewport for responsive widget configuration
+    const [isMobile, setIsMobile] = useState(false);
+    
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 640);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    // Configuration for the LI.FI widget - optimized for mobile
+     
+    const widgetConfig: Record<string, unknown> = {
         integrator: 'HyperGate',
+        variant: isMobile ? 'compact' : 'default',
         toChain: CHAINS.HYPEREVM.id,
         toToken: CONTRACTS.USDC_HYPEREVM,
-        toAddress: userAddress as any,
-        hiddenUI: ['toAddress', 'toToken', 'appearance'] as any,
+        toAddress: userAddress,
+        hiddenUI: ['toAddress', 'toToken', 'appearance'],
         appearance: 'light',
         enableGas: true,
         theme: {
             container: {
-                borderRadius: '16px',
+                display: isMobile ? 'flex' : 'block',
+                height: isMobile ? '100%' : 'auto',
+                borderRadius: isMobile ? '16px' : '16px',
                 maxWidth: '100%',
                 boxShadow: 'none',
                 border: 'none',
@@ -119,8 +134,8 @@ export function HyperGate({
                 secondary: { main: '#F4F4F5' },
             },
             shape: {
-                borderRadius: 12,
-                borderRadiusSecondary: 12,
+                borderRadius: isMobile ? 10 : 12,
+                borderRadiusSecondary: isMobile ? 10 : 12,
             },
             typography: {
                 fontFamily: 'Inter, sans-serif',
@@ -129,22 +144,31 @@ export function HyperGate({
     };
 
     // Stored route to resume after safety check
-    const [_pendingRoute, setPendingRoute] = useState<any>(null);
+    const [, setPendingRoute] = useState<Route | null>(null);
 
-    const handleSafetyCheck = (route: any) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const handleSafetyCheck = (route: Route | any) => {
         // Parse fee data
-        const fromAmountUSD = parseFloat(route.fromAmountUSD || '0');
-        const toAmountUSD = parseFloat(route.toAmountUSD || '0');
-        const gasCostUSD = parseFloat(route.gasCostUSD || '0');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const routeAny = route as any;
+        const fromAmountUSD = parseFloat(routeAny.fromAmountUSD || '0');
+        const toAmountUSD = parseFloat(routeAny.toAmountUSD || '0');
+        const gasCostUSD = parseFloat(routeAny.gasCostUSD || '0');
 
         // If gasCostUSD is missing, sum up steps
-        const totalGasUSD = gasCostUSD > 0 ? gasCostUSD : (route.steps || []).reduce((acc: number, step: any) => {
-            return acc + (step.estimate?.gasCosts?.reduce((gAcc: number, g: any) => gAcc + parseFloat(g.amountUSD || '0'), 0) || 0);
+        const steps = (route.steps as unknown as Array<Record<string, unknown>>) || [];
+        const totalGasUSD = gasCostUSD > 0 ? gasCostUSD : steps.reduce((acc: number, step) => {
+             
+            const estimate = step.estimate as Record<string, unknown> | undefined;
+            const gasCosts = (estimate?.gasCosts as Array<Record<string, unknown>>) || [];
+            return acc + gasCosts.reduce((gAcc: number, g) => gAcc + parseFloat((g.amountUSD as string) || '0'), 0);
         }, 0);
 
         // Extract estimated execution duration from route steps (in seconds)
-        const estimatedDuration = (route.steps || []).reduce((acc: number, step: any) => {
-            return acc + (step.estimate?.executionDuration || 0);
+        const estimatedDuration = steps.reduce((acc: number, step) => {
+             
+            const estimate = step.estimate as Record<string, unknown> | undefined;
+            return acc + ((estimate?.executionDuration as number) || 0);
         }, 0);
 
         const bridgeFeeUSD = fromAmountUSD - toAmountUSD - totalGasUSD; // Rough estimate of spread + fees
@@ -166,10 +190,12 @@ export function HyperGate({
     };
 
     useEffect(() => {
-        const onRouteExecuted = async (route: any) => {
+        const onRouteExecuted = async (route: Route) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const routeData = route as any;
 
             // SECURITY: Input Validation
-            if (!route || typeof route.toAmount !== 'string') {
+            if (!routeData || typeof routeData.toAmount !== 'string') {
                 console.error('❌ Security: Invalid route data from LI.FI');
                 setError('BRIDGE_FAILED');
                 callbacks?.onError?.({ type: 'BRIDGE_FAILED', message: 'Invalid route data received' });
@@ -179,10 +205,10 @@ export function HyperGate({
             // SECURITY: Decimal Handling & Overflow Protection
             let amount: bigint;
             try {
-                if (!/^\d+$/.test(route.toAmount)) throw new Error('Invalid amount format');
-                amount = BigInt(route.toAmount);
+                if (!/^\d+$/.test(routeData.toAmount)) throw new Error('Invalid amount format');
+                amount = BigInt(routeData.toAmount);
 
-                if (parseFloat(route.toAmountUSD) > LIMITS.MAXIMUM_DEPOSIT) {
+                if (parseFloat(routeData.toAmountUSD) > LIMITS.MAXIMUM_DEPOSIT) {
                     throw new Error('Amount exceeds maximum deposit limit');
                 }
             } catch (e) {
@@ -244,14 +270,14 @@ export function HyperGate({
             lastAmountRef.current = amount;
 
             // Notify backend that bridge completed
-            if (depositIdRef.current && route.transactionHash) {
+            if (depositIdRef.current && routeData.transactionHash) {
                 try {
                     await apiClient.notifyBridgeSuccess(
                         depositIdRef.current,
-                        route.transactionHash,
+                        routeData.transactionHash,
                         amount.toString()
                     );
-                } catch (err) {
+                } catch (_err) {
                     // Non-critical: backend notification failed but bridge succeeded
                 }
             }
@@ -267,28 +293,28 @@ export function HyperGate({
                             txHash,
                             amount.toString()
                         );
-                    } catch (err) {
+                    } catch (_err) {
                         // Non-critical: backend notification failed but deposit succeeded
                     }
                 }
 
                 setStateWithCallback('SUCCESS');
                 callbacks?.onSuccess?.({ txHash: txHash || '', amount: amount.toString() });
-            } catch (err) {
-                console.error('❌ L1 Deposit Failed:', err);
+            } catch (_err) {
+                console.error('❌ L1 Deposit Failed:', _err);
                 setError('DEPOSIT_FAILED');
                 callbacks?.onError?.({ type: 'DEPOSIT_FAILED', message: 'L1 deposit transaction failed' });
             }
         };
 
-        const onRouteFailed = (err: any) => {
-            console.error('❌ Bridge failed:', err);
+        const onRouteFailed = () => {
+            console.error('❌ Bridge failed');
             setStateWithCallback('IDLE');
             setError('BRIDGE_FAILED');
-            callbacks?.onError?.({ type: 'BRIDGE_FAILED', message: err?.message || 'Bridge transaction failed' });
+            callbacks?.onError?.({ type: 'BRIDGE_FAILED', message: 'Bridge transaction failed' });
         };
 
-        const onRouteExecutionStarted = async (route: any) => {
+        const onRouteExecutionStarted = async (route: Route) => {
             handleSafetyCheck(route);
 
             try {
@@ -303,7 +329,7 @@ export function HyperGate({
                 if (response.success && response.data) {
                     depositIdRef.current = response.data.id;
                 }
-            } catch (err) {
+            } catch (_err) {
                 // Non-critical: deposit record creation failed
             }
         };
@@ -317,6 +343,7 @@ export function HyperGate({
             widgetEvents.off(WidgetEvent.RouteExecutionFailed, onRouteFailed);
             widgetEvents.off(WidgetEvent.RouteExecutionStarted, onRouteExecutionStarted);
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [widgetEvents, setStateWithCallback, setError, depositToL1, setSafetyPayload, publicClient, userAddress, callbacks]);
 
     // Demo Mode Logic
@@ -356,7 +383,7 @@ export function HyperGate({
                     if (balance > 0n) {
                         lastAmountRef.current = balance;
                     }
-                } catch (err) {
+                } catch (_err) {
                     // Could not fetch balance for retry
                 }
             }
@@ -381,14 +408,14 @@ export function HyperGate({
                         txHash,
                         lastAmountRef.current.toString()
                     );
-                } catch (err) {
+                } catch (_err) {
                     // Non-critical: backend notification failed
                 }
             }
 
             setStateWithCallback('SUCCESS');
             callbacks?.onSuccess?.({ txHash: txHash || '', amount: lastAmountRef.current.toString() });
-        } catch (err) {
+        } catch (_err) {
             setError('DEPOSIT_FAILED');
             callbacks?.onError?.({ type: 'DEPOSIT_FAILED', message: 'L1 deposit retry failed' });
         }
@@ -412,7 +439,7 @@ export function HyperGate({
                 await depositToL1(BigInt(mockRoute.toAmount));
                 setStateWithCallback('SUCCESS');
                 callbacks?.onSuccess?.({ txHash: 'demo-tx-hash', amount: mockRoute.toAmount });
-            } catch (err) {
+            } catch (_err) {
                 setError('DEPOSIT_FAILED');
                 callbacks?.onError?.({ type: 'DEPOSIT_FAILED', message: 'Demo deposit failed' });
             }
@@ -740,4 +767,3 @@ export function HyperGate({
         </div>
     );
 }
-

@@ -1,5 +1,3 @@
-import React, { useEffect, useRef } from 'react';
-
 export const TechnicalGrid = () => {
     return (
         <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">

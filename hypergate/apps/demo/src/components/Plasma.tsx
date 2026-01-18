@@ -176,7 +176,7 @@ export const Plasma = ({
         let raf = 0;
         const t0 = performance.now();
         const loop = (t: number) => {
-            let timeValue = (t - t0) * 0.001;
+            const timeValue = (t - t0) * 0.001;
             if (direction === 'pingpong') {
                 const pingpongDuration = 10;
                 const segmentTime = timeValue % pingpongDuration;
@@ -204,7 +204,7 @@ export const Plasma = ({
                 if (containerEl && containerEl.contains(canvas)) {
                     containerEl.removeChild(canvas);
                 }
-            } catch (e) {
+            } catch (_e) {
                 console.warn('Canvas already removed from container');
             }
         };

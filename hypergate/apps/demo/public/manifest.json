@@ -1,0 +1,50 @@
+{
+  "name": "HyperGate - Bridge to Hyperliquid",
+  "short_name": "HyperGate",
+  "description": "Instant, safe, one-click onboarding to Hyperliquid. Bridge from any chain using LI.FI.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0E0E10",
+  "theme_color": "#A855F7",
+  "categories": ["finance", "utilities"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Bridge USDC",
+      "short_name": "Bridge",
+      "description": "Bridge USDC to Hyperliquid",
+      "url": "/?action=bridge&token=USDC",
+      "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "protocol_handlers": [
+    {
+      "protocol": "web+hypergate",
+      "url": "/?deeplink=%s"
+    }
+  ]
+}
