@@ -74,8 +74,6 @@ Contributions are welcome! Please read our [Contribution Guide](docs/guides/03-d
 
 ## 📄 License
 
-## 📄 License
-
 MIT
 
 ---
